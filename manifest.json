@@ -16,8 +16,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.mozilla.org/*"],
-      "js": ["src/js/content_script.js"]
+      "matches": [
+        "*://*.mozilla.org/*"
+      ],
+      "js": [
+        "src/js/content_script.js"
+      ]
     }
   ],
   "action": {
@@ -31,5 +35,7 @@
     "page": "options/index.html",
     "browser_style": false
   },
-  "permissions": ["webNavigation"]
+  "permissions": [
+    "webNavigation"
+  ]
 }
