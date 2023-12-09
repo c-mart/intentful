@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "ext-ff-mv3",
+  "description": "test description",
+  "version": "0",
+  "icons": {
+    "64": "icons/icon.png"
+  },
+  "background": {
+    "scripts": [
+      "built/elm-background.js",
+      "node_modules/webextension-polyfill/dist/browser-polyfill.js",
+      "built/background_script.js"
+    ],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.mozilla.org/*"],
+      "js": ["src/js/content_script.js"]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "64": "icons/icon.png"
+    },
+    "default_popup": "browserAction/index.html",
+    "default_title": "ext-ff-mv3"
+  },
+  "options_ui": {
+    "page": "options/index.html",
+    "browser_style": false
+  },
+  "permissions": ["webNavigation"]
+}

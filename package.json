@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "@types/elm": "^0.19.3",
+    "@types/webextension-polyfill": "^0.10.7",
+    "elm": "^0.19.1-6",
+    "elm-format": "^0.8.7",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.2",
+    "uglify-js": "^3.17.4"
+  },
+  "devDependencies": {
+    "webextension-polyfill": "^0.10.0"
+  },
+  "scripts": {
+    "build": "npm run elm-build && npm run ts-build",
+    "elm-build": "npx elm make src/elm/Background.elm --output=built/elm-background.js && npx elm make src/elm/Intercept.elm --output=built/elm-intercept.js && npm run fix-elm-output",
+    "fix-elm-output": "sed -i '$ s/this/this||window/' built/elm-background.js # https://stackoverflow.com/questions/52902903/cannot-read-property-elm-of-undefined-while-using-elm-0-19-in-electron",
+    "ts-build": "npx tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "npm run elm-format; npm run js-format",
+    "elm-format": "npx elm-format --yes src/elm/",
+    "js-format": "npx prettier --write ."
+  }
+}

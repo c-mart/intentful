@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "outDir": "./built",
+    "allowJs": true,
+    "target": "es6",
+    "module": "es6",
+    "esModuleInterop": true
+  },
+  "include": [
+    "./src/ts/**/*",
+    "./built/elm-background.js",
+    "./built/elm-intercept.js"
+  ]
+}
