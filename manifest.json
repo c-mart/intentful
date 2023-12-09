@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "ext-ff-mv3",
+  "name": "Intentful",
   "description": "test description",
   "version": "0",
   "icons": {
@@ -29,7 +29,7 @@
       "64": "icons/icon.png"
     },
     "default_popup": "browserAction/index.html",
-    "default_title": "ext-ff-mv3"
+    "default_title": "Intentful"
   },
   "options_ui": {
     "page": "options/index.html",
