@@ -6,52 +6,100 @@ import Debug
 import Html exposing (Html)
 import Json.Decode
 import Json.Encode
+import Url
+import Url.Parser exposing ((<?>))
+import Url.Parser.Query
 
 
-main : Program Json.Encode.Value OuterModel Msg
+main : Program Json.Encode.Value Model Msg
 main =
     Browser.element
-        { init = \_ -> ( WaitingForModel, Cmd.none )
+        { init = init
         , update = update
         , view = view
         , subscriptions = \_ -> subs
         }
 
 
-type OuterModel
+init : Json.Decode.Value -> ( Model, Cmd Msg )
+init flags =
+    let
+        href =
+            Json.Decode.decodeValue (Json.Decode.field "href" Json.Decode.string) flags
+                |> Result.mapError Json.Decode.errorToString
+
+        urlStrToNextUrl uS =
+            let
+                hrefSchemeSwap =
+                    -- https://github.com/elm/url/issues/10
+                    uS
+                        |> String.replace "moz-extension" "http"
+                        |> String.replace "chrome-extension" "http"
+
+                qParser =
+                    Url.Parser.Query.string "next"
+
+                parseQ url =
+                    Url.Parser.parse (Url.Parser.s "intercept.html" <?> qParser) url
+            in
+            case Url.fromString hrefSchemeSwap of
+                Just url ->
+                    case parseQ url of
+                        Just (Just nextUrl_) ->
+                            Ok nextUrl_
+
+                        _ ->
+                            Err "Could not parse query string"
+
+                Nothing ->
+                    Err "Could not parse next URL"
+
+        nextUrl =
+            Result.andThen urlStrToNextUrl href
+    in
+    ( Model Waiting nextUrl, Cmd.none )
+
+
+type alias Model =
+    { common : CommonModel
+    , nextUrl : Result String String
+    }
+
+
+type CommonModel
     = Valid C.Model
     | Invalid String
-    | WaitingForModel
+    | Waiting
 
 
-decodeModel : Json.Decode.Value -> OuterModel
-decodeModel flags =
+decodeCommonModel : Json.Decode.Value -> CommonModel
+decodeCommonModel flags =
     case Json.Decode.decodeValue C.modelDecoder flags of
-        Ok model ->
-            Valid model
+        Ok commonModel ->
+            Valid commonModel
 
         Err e ->
             Invalid (Json.Decode.errorToString e)
 
 
 type Msg
-    = GotModel Json.Encode.Value
+    = GotCommonModel Json.Encode.Value
 
 
-update : Msg -> OuterModel -> ( OuterModel, Cmd a )
-update msg outerModel =
+update : Msg -> Model -> ( Model, Cmd a )
+update msg model =
     case msg of
-        GotModel value ->
-            ( decodeModel value, Cmd.none )
+        GotCommonModel value ->
+            ( { model | common = decodeCommonModel value }, Cmd.none )
 
 
-view : OuterModel -> Html Msg
-view outerModel =
+view : Model -> Html Msg
+view model =
     let
         text =
-            case outerModel of
-                WaitingForModel ->
-                    "Waiting for model"
+            case model.common of
+                Waiting ->
+                    "Waiting for common model"
 
                 Valid m ->
                     "Got model: " ++ Debug.toString m
@@ -59,12 +107,12 @@ view outerModel =
                 Invalid s ->
                     "Invalid model: " ++ s
     in
-    Html.text text
+    Html.text (text ++ " and you were going to " ++ Debug.toString model.nextUrl)
 
 
 subs : Sub Msg
 subs =
-    receiveModel GotModel
+    receiveCommonModel GotCommonModel
 
 
-port receiveModel : (Json.Encode.Value -> msg) -> Sub msg
+port receiveCommonModel : (Json.Encode.Value -> msg) -> Sub msg

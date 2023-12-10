@@ -57,8 +57,11 @@ innerUpdate msg model =
                             if checkIfRedirect model.domainsToRedirect url then
                                 ( model
                                 , setRedirect
-                                    (encodeRedirect tabId
-                                        "/intercept.html"
+                                    (encodeRedirect tabId <|
+                                        String.concat
+                                            [ "/intercept.html?next="
+                                            , url |> Url.toString |> Url.percentEncode
+                                            ]
                                     )
                                 )
 
