@@ -62,7 +62,7 @@ view outerModel =
     Html.text text
 
 
-subs : Sub msg
+subs : Sub Msg
 subs =
     receiveModel GotModel
 
