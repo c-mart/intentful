@@ -9,6 +9,7 @@
     "uglify-js": "^3.17.4"
   },
   "devDependencies": {
+    "elm-test-rs": "^3.0.0-5",
     "webextension-polyfill": "^0.10.0"
   },
   "scripts": {
@@ -16,7 +17,7 @@
     "elm-build": "npx elm make src/elm/Background.elm --output=built/elm-background.js && npx elm make src/elm/Intercept.elm --output=built/elm-intercept.js && npm run fix-elm-output",
     "fix-elm-output": "sed -i '$ s/this/this||window/' built/elm-background.js # https://stackoverflow.com/questions/52902903/cannot-read-property-elm-of-undefined-while-using-elm-0-19-in-electron",
     "ts-build": "npx tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npx elm-test-rs",
     "format": "npm run elm-format; npm run js-format",
     "elm-format": "npx elm-format --yes src/elm/",
     "js-format": "npx prettier --write ."
