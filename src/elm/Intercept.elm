@@ -24,15 +24,15 @@ main =
 init : Json.Decode.Value -> ( Model, Cmd Msg )
 init flags =
     let
-        href =
+        hrefStr =
             Json.Decode.decodeValue (Json.Decode.field "href" Json.Decode.string) flags
                 |> Result.mapError Json.Decode.errorToString
 
-        urlStrToNextUrl uS =
+        hrefStrToNextUrlStr hrefStr_ =
             let
                 hrefSchemeSwap =
                     -- https://github.com/elm/url/issues/10
-                    uS
+                    hrefStr_
                         |> String.replace "moz-extension" "http"
                         |> String.replace "chrome-extension" "http"
 
@@ -55,14 +55,24 @@ init flags =
                     Err "Could not parse next URL"
 
         nextUrl =
-            Result.andThen urlStrToNextUrl href
+            case Result.andThen hrefStrToNextUrlStr hrefStr of
+                Ok uS ->
+                    case Url.fromString uS of
+                        Just url ->
+                            Ok url
+
+                        Nothing ->
+                            Err "Could not parse URL in \"next\" query parameter"
+
+                Err e ->
+                    Err e
     in
     ( Model Waiting nextUrl, Cmd.none )
 
 
 type alias Model =
     { common : CommonModel
-    , nextUrl : Result String String
+    , nextUrl : Result String Url.Url
     }
 
 
