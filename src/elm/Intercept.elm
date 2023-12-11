@@ -1,5 +1,6 @@
 port module Intercept exposing (..)
 
+import Background exposing (Msg(..))
 import Browser
 import Common as C
 import Debug
@@ -93,14 +94,22 @@ decodeCommonModel flags =
 
 
 type Msg
-    = GotCommonModel Json.Encode.Value
+    = ReceiveMessage Json.Encode.Value
 
 
 update : Msg -> Model -> ( Model, Cmd a )
 update msg model =
     case msg of
-        GotCommonModel value ->
-            ( { model | common = decodeCommonModel value }, Cmd.none )
+        ReceiveMessage value ->
+            case Json.Decode.decodeValue C.decodeMessageFromBackgroundScript value of
+                Ok message ->
+                    case message of
+                        C.SendModel commonModel ->
+                            ( { model | common = Valid commonModel }, Cmd.none )
+
+                Err e ->
+                    -- TODO something with this error
+                    ( model, Cmd.none )
 
 
 view : Model -> Html Msg
@@ -122,7 +131,7 @@ view model =
 
 subs : Sub Msg
 subs =
-    receiveCommonModel GotCommonModel
+    receiveMessage ReceiveMessage
 
 
-port receiveCommonModel : (Json.Encode.Value -> msg) -> Sub msg
+port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg

@@ -50,6 +50,10 @@ encodeMessageFromInterceptPage message =
                 ]
 
 
+
+-- TODO rename to messageFromInterceptPageDecoder
+
+
 decodeMessageFromInterceptPage : Json.Decode.Decoder MessageFromInterceptPage
 decodeMessageFromInterceptPage =
     let
@@ -82,6 +86,10 @@ encodeMessageFromBackgroundScript message =
                 [ ( "tag", Json.Encode.string "send-model" )
                 , ( "model", encodeModel model )
                 ]
+
+
+
+-- TODO rename to messageFromInterceptPageDecoder
 
 
 decodeMessageFromBackgroundScript : Json.Decode.Decoder MessageFromBackgroundScript

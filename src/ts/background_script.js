@@ -6,8 +6,8 @@ backgroundApp.ports.setRedirect.subscribe(function ({ tabId, url }) {
   browser.tabs.update(tabId, { url: url });
 });
 
-backgroundApp.ports.sendModel.subscribe(function (model) {
-  browser.runtime.sendMessage({ model: model });
+backgroundApp.ports.sendMessage.subscribe(function (message) {
+  browser.runtime.sendMessage(message);
 });
 
 browser.webNavigation.onBeforeNavigate.addListener((details) => {
@@ -20,5 +20,5 @@ browser.webNavigation.onBeforeNavigate.addListener((details) => {
 });
 
 browser.runtime.onMessage.addListener(
-  backgroundApp.ports.receiveModelRequest.send,
+  backgroundApp.ports.receiveMessage.send,
 );

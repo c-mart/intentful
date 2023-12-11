@@ -10,5 +10,5 @@ browser.runtime.sendMessage({ tag: "request-model" });
 browser.runtime.onMessage.addListener(receiveMessage);
 
 function receiveMessage(message) {
-  app.ports.receiveCommonModel.send(message.model);
+  app.ports.receiveMessage.send(message);
 }
