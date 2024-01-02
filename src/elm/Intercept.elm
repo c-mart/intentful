@@ -118,7 +118,7 @@ canCreateException rm =
     let
         waitDurationMillis =
             -- 10 seconds
-            10 * 1000
+            10 * 1000 - 1
 
         waitRemainMillis =
             waitDurationMillis - (Time.posixToMillis rm.currentTime - Time.posixToMillis rm.pageLoadTime)
@@ -240,7 +240,7 @@ viewResolved rm =
                     Html.button [ HtmlE.onClick (GotCreateException rm.nextUrl expireTime) ] [ Html.text "Create exception" ]
 
                 WaitToCreate waitRemainMillis ->
-                    Html.button [] [ Html.text <| "You must wait " ++ String.fromInt waitRemainMillis ++ " to create an exception" ]
+                    Html.button [] [ Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis ++ " to create an exception" ]
 
                 InvalidDuration ->
                     Html.button [] [ Html.text "Breaux, you must enter a number of minutes" ]
@@ -257,6 +257,24 @@ viewResolved rm =
             , Html.li [] [ createExceptionButton ]
             ]
         ]
+
+
+countdownRemainText : Int -> String
+countdownRemainText millis =
+    let
+        secs =
+            millis // 1000 + 1
+
+        toPadStr i =
+            i |> String.fromInt |> String.padLeft 2 '0'
+
+        minsField =
+            secs // 60 |> toPadStr
+
+        secsField =
+            remainderBy 60 secs |> toPadStr
+    in
+    minsField ++ ":" ++ secsField
 
 
 subs : Sub Msg
