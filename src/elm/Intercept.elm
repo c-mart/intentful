@@ -75,13 +75,14 @@ init flags =
                 |> Result.withDefault 0
                 |> Time.millisToPosix
     in
-    ( Model Waiting nextUrl time, Cmd.none )
+    ( Model Waiting nextUrl time time, Cmd.none )
 
 
 type alias Model =
     { common : CommonModel
     , nextUrl : Result String Url.Url
     , pageLoadTime : Time.Posix
+    , currentTime : Time.Posix
     }
 
 
@@ -95,6 +96,7 @@ type alias ResolvedModel =
     { common : C.Model
     , nextUrl : Url.Url
     , pageLoadTime : Time.Posix
+    , currentTime : Time.Posix
     }
 
 
@@ -102,7 +104,7 @@ toResolvedModel : Model -> Result String ResolvedModel
 toResolvedModel model =
     case ( model.common, model.nextUrl ) of
         ( Valid commonModel, Ok url ) ->
-            Ok (ResolvedModel commonModel url model.pageLoadTime)
+            Ok (ResolvedModel commonModel url model.pageLoadTime model.currentTime)
 
         ( Invalid invalidErr, _ ) ->
             Err ("Cannot resolve because common model is invalid: " ++ invalidErr)
@@ -126,6 +128,7 @@ decodeCommonModel flags =
 
 type Msg
     = ReceiveMessage Json.Encode.Value
+    | ReceiveCurrentTime Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd a )
@@ -141,6 +144,9 @@ update msg model =
                 Err e ->
                     -- TODO something with this error
                     ( model, Cmd.none )
+
+        ReceiveCurrentTime time ->
+            ( { model | currentTime = time }, Cmd.none )
 
 
 view : Model -> Html Msg
@@ -160,12 +166,17 @@ viewResolved rm =
             ++ rm.nextUrl.host
             ++ " and this page loaded at "
             ++ (String.fromInt <| Time.posixToMillis <| rm.pageLoadTime)
+            ++ " and it is now "
+            ++ (String.fromInt <| Time.posixToMillis <| rm.currentTime)
         )
 
 
 subs : Sub Msg
 subs =
-    receiveMessage ReceiveMessage
+    Sub.batch
+        [ receiveMessage ReceiveMessage
+        , Time.every 1000 ReceiveCurrentTime
+        ]
 
 
 port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg
