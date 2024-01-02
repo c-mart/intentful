@@ -5,6 +5,7 @@ import Browser
 import Common as C
 import Debug
 import Html exposing (Html)
+import Html.Attributes as HtmlA
 import Html.Events as HtmlE
 import Json.Decode
 import Json.Encode
@@ -76,7 +77,7 @@ init flags =
                 |> Result.withDefault 0
                 |> Time.millisToPosix
     in
-    ( Model Waiting nextUrl time time "", Cmd.none )
+    ( Model Waiting nextUrl time time "2", Cmd.none )
 
 
 type alias Model =
@@ -253,7 +254,13 @@ viewResolved rm =
                 )
             ]
         , Html.ul []
-            [ Html.li [] [ Html.input [ HtmlE.onInput GotExceptionDurationInput ] [] ]
+            [ Html.li []
+                [ Html.input
+                    [ HtmlE.onInput GotExceptionDurationInput
+                    , HtmlA.value rm.exceptionDurationInput
+                    ]
+                    []
+                ]
             , Html.li [] [ createExceptionButton ]
             ]
         ]
