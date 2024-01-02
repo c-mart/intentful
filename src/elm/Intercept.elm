@@ -5,6 +5,7 @@ import Browser
 import Common as C
 import Debug
 import Html exposing (Html)
+import Html.Events as HtmlE
 import Json.Decode
 import Json.Encode
 import Time
@@ -155,6 +156,7 @@ decodeCommonModel flags =
 type Msg
     = ReceiveMessage Json.Encode.Value
     | ReceiveCurrentTime Time.Posix
+    | GotCreateException
 
 
 update : Msg -> Model -> ( Model, Cmd a )
@@ -173,6 +175,10 @@ update msg model =
 
         ReceiveCurrentTime time ->
             ( { model | currentTime = time }, Cmd.none )
+
+        GotCreateException ->
+            -- TODO
+            ( model, Cmd.none )
 
 
 view : Model -> Html Msg
@@ -196,7 +202,7 @@ viewResolved rm =
             ]
         , case canCreateException rm of
             CanCreate ->
-                Html.text "You can create an exception"
+                Html.button [ HtmlE.onClick GotCreateException ] [ Html.text "Create exception" ]
 
             WaitToCreate waitRemainMillis ->
                 Html.text ("You must wait " ++ String.fromInt waitRemainMillis ++ " to create an exception")
