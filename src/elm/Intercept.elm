@@ -100,6 +100,32 @@ type alias ResolvedModel =
     }
 
 
+type ExceptionCreatability
+    = CanCreate
+    | WaitToCreate TimeRemainingMillis
+
+
+type alias TimeRemainingMillis =
+    Int
+
+
+canCreateException : ResolvedModel -> ExceptionCreatability
+canCreateException rm =
+    let
+        waitDurationMillis =
+            -- 10 seconds
+            10 * 1000
+
+        waitRemainMillis =
+            waitDurationMillis - (Time.posixToMillis rm.currentTime - Time.posixToMillis rm.pageLoadTime)
+    in
+    if waitRemainMillis > 0 then
+        WaitToCreate waitRemainMillis
+
+    else
+        CanCreate
+
+
 toResolvedModel : Model -> Result String ResolvedModel
 toResolvedModel model =
     case ( model.common, model.nextUrl ) of
@@ -161,14 +187,20 @@ view model =
 
 viewResolved : ResolvedModel -> Html Msg
 viewResolved rm =
-    Html.text
-        ("You were going to "
-            ++ rm.nextUrl.host
-            ++ " and this page loaded at "
-            ++ (String.fromInt <| Time.posixToMillis <| rm.pageLoadTime)
-            ++ " and it is now "
-            ++ (String.fromInt <| Time.posixToMillis <| rm.currentTime)
-        )
+    Html.div []
+        [ Html.p []
+            [ Html.text
+                ("You were going to "
+                    ++ rm.nextUrl.host
+                )
+            ]
+        , case canCreateException rm of
+            CanCreate ->
+                Html.text "You can create an exception"
+
+            WaitToCreate waitRemainMillis ->
+                Html.text ("You must wait " ++ String.fromInt waitRemainMillis ++ " to create an exception")
+        ]
 
 
 subs : Sub Msg
