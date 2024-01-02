@@ -83,6 +83,28 @@ type CommonModel
     | Waiting
 
 
+type alias ResolvedModel =
+    { common : C.Model
+    , nextUrl : Url.Url
+    }
+
+
+toResolvedModel : Model -> Result String ResolvedModel
+toResolvedModel model =
+    case ( model.common, model.nextUrl ) of
+        ( Valid commonModel, Ok url ) ->
+            Ok (ResolvedModel commonModel url)
+
+        ( Invalid invalidErr, _ ) ->
+            Err ("Cannot resolve because common model is invalid: " ++ invalidErr)
+
+        ( Waiting, _ ) ->
+            Err "Cannot resolve because waiting for common model"
+
+        ( _, Err urlErr ) ->
+            Err ("Cannot resolve because next URL is invalid: " ++ urlErr)
+
+
 decodeCommonModel : Json.Decode.Value -> CommonModel
 decodeCommonModel flags =
     case Json.Decode.decodeValue C.modelDecoder flags of
@@ -114,19 +136,17 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    let
-        text =
-            case model.common of
-                Waiting ->
-                    "Waiting for common model"
+    case toResolvedModel model of
+        Ok resolvedModel ->
+            viewResolved resolvedModel
 
-                Valid m ->
-                    "Got model: " ++ Debug.toString m
+        Err errStr ->
+            Html.text ("Cannot render page: " ++ errStr)
 
-                Invalid s ->
-                    "Invalid model: " ++ s
-    in
-    Html.text (text ++ " and you were going to " ++ Debug.toString model.nextUrl)
+
+viewResolved : ResolvedModel -> Html Msg
+viewResolved model =
+    Html.text "todo show resolved model"
 
 
 subs : Sub Msg
