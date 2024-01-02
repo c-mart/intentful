@@ -22,6 +22,7 @@ type Msg
 
 checkIfRedirect : List String -> Url.Url -> Bool
 checkIfRedirect domains url =
+    -- TODO don't redirect if there's an exception
     let
         hostname =
             url.host
@@ -54,8 +55,7 @@ innerUpdate msg model =
                             ( model, sendMessage <| C.encodeMessageFromBackgroundScript (C.SendModel model) )
 
                         C.NewException exception ->
-                            -- TODO store exception in model
-                            ( model, Cmd.none )
+                            ( { model | exceptions = exception :: model.exceptions }, Cmd.none )
 
                 Err e ->
                     -- TODO something with this error

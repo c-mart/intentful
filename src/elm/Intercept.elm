@@ -156,7 +156,11 @@ decodeCommonModel flags =
 type Msg
     = ReceiveMessage Json.Encode.Value
     | ReceiveCurrentTime Time.Posix
-    | GotCreateException
+    | GotCreateException Url.Url ExceptionEndTime
+
+
+type alias ExceptionEndTime =
+    Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd a )
@@ -176,9 +180,15 @@ update msg model =
         ReceiveCurrentTime time ->
             ( { model | currentTime = time }, Cmd.none )
 
-        GotCreateException ->
-            -- TODO
-            ( model, Cmd.none )
+        GotCreateException url endTime ->
+            let
+                exception =
+                    C.encodeMessageFromInterceptPage
+                        (C.NewException <|
+                            C.Exception url.host endTime
+                        )
+            in
+            ( model, sendMessage exception )
 
 
 view : Model -> Html Msg
@@ -202,7 +212,8 @@ viewResolved rm =
             ]
         , case canCreateException rm of
             CanCreate ->
-                Html.button [ HtmlE.onClick GotCreateException ] [ Html.text "Create exception" ]
+                -- TODO form field to choose end time, don't just pass current time
+                Html.button [ HtmlE.onClick (GotCreateException rm.nextUrl rm.currentTime) ] [ Html.text "Create exception" ]
 
             WaitToCreate waitRemainMillis ->
                 Html.text ("You must wait " ++ String.fromInt waitRemainMillis ++ " to create an exception")
@@ -218,3 +229,6 @@ subs =
 
 
 port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg
+
+
+port sendMessage : Json.Encode.Value -> Cmd msg
