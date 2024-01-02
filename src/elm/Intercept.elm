@@ -76,7 +76,7 @@ init flags =
                 |> Result.withDefault 0
                 |> Time.millisToPosix
     in
-    ( Model Waiting nextUrl time time, Cmd.none )
+    ( Model Waiting nextUrl time time "", Cmd.none )
 
 
 type alias Model =
@@ -84,6 +84,7 @@ type alias Model =
     , nextUrl : Result String Url.Url
     , pageLoadTime : Time.Posix
     , currentTime : Time.Posix
+    , exceptionDurationInput : String
     }
 
 
@@ -98,12 +99,14 @@ type alias ResolvedModel =
     , nextUrl : Url.Url
     , pageLoadTime : Time.Posix
     , currentTime : Time.Posix
+    , exceptionDurationInput : String
     }
 
 
 type ExceptionCreatability
-    = CanCreate
+    = CanCreate MinutesInt
     | WaitToCreate TimeRemainingMillis
+    | InvalidDuration
 
 
 type alias TimeRemainingMillis =
@@ -124,14 +127,26 @@ canCreateException rm =
         WaitToCreate waitRemainMillis
 
     else
-        CanCreate
+        case String.toInt rm.exceptionDurationInput of
+            Just i ->
+                CanCreate i
+
+            Nothing ->
+                InvalidDuration
 
 
 toResolvedModel : Model -> Result String ResolvedModel
 toResolvedModel model =
     case ( model.common, model.nextUrl ) of
         ( Valid commonModel, Ok url ) ->
-            Ok (ResolvedModel commonModel url model.pageLoadTime model.currentTime)
+            Ok
+                (ResolvedModel
+                    commonModel
+                    url
+                    model.pageLoadTime
+                    model.currentTime
+                    model.exceptionDurationInput
+                )
 
         ( Invalid invalidErr, _ ) ->
             Err ("Cannot resolve because common model is invalid: " ++ invalidErr)
@@ -157,6 +172,11 @@ type Msg
     = ReceiveMessage Json.Encode.Value
     | ReceiveCurrentTime Time.Posix
     | GotCreateException Url.Url ExceptionEndTime
+    | GotExceptionDurationInput String
+
+
+type alias MinutesInt =
+    Int
 
 
 type alias ExceptionEndTime =
@@ -179,6 +199,9 @@ update msg model =
 
         ReceiveCurrentTime time ->
             ( { model | currentTime = time }, Cmd.none )
+
+        GotExceptionDurationInput minsStr ->
+            ( { model | exceptionDurationInput = minsStr }, Cmd.none )
 
         GotCreateException url endTime ->
             let
@@ -203,6 +226,25 @@ view model =
 
 viewResolved : ResolvedModel -> Html Msg
 viewResolved rm =
+    let
+        createExceptionButton =
+            case canCreateException rm of
+                CanCreate durationMins ->
+                    let
+                        expireTime =
+                            rm.currentTime
+                                |> Time.posixToMillis
+                                |> (+) (durationMins * 60 * 1000)
+                                |> Time.millisToPosix
+                    in
+                    Html.button [ HtmlE.onClick (GotCreateException rm.nextUrl expireTime) ] [ Html.text "Create exception" ]
+
+                WaitToCreate waitRemainMillis ->
+                    Html.button [] [ Html.text <| "You must wait " ++ String.fromInt waitRemainMillis ++ " to create an exception" ]
+
+                InvalidDuration ->
+                    Html.button [] [ Html.text "Breaux, you must enter a number of minutes" ]
+    in
     Html.div []
         [ Html.p []
             [ Html.text
@@ -210,20 +252,10 @@ viewResolved rm =
                     ++ rm.nextUrl.host
                 )
             ]
-        , case canCreateException rm of
-            CanCreate ->
-                -- TODO form field to choose end time, don't just pass current time
-                let
-                    expireTime =
-                        rm.currentTime
-                            |> Time.posixToMillis
-                            |> (+) 20000
-                            |> Time.millisToPosix
-                in
-                Html.button [ HtmlE.onClick (GotCreateException rm.nextUrl expireTime) ] [ Html.text "Create exception" ]
-
-            WaitToCreate waitRemainMillis ->
-                Html.text ("You must wait " ++ String.fromInt waitRemainMillis ++ " to create an exception")
+        , Html.ul []
+            [ Html.li [] [ Html.input [ HtmlE.onInput GotExceptionDurationInput ] [] ]
+            , Html.li [] [ createExceptionButton ]
+            ]
         ]
 
 
