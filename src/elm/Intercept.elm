@@ -7,6 +7,7 @@ import Debug
 import Html exposing (Html)
 import Json.Decode
 import Json.Encode
+import Time
 import Url
 import Url.Parser exposing ((<?>))
 import Url.Parser.Query
@@ -67,13 +68,20 @@ init flags =
 
                 Err e ->
                     Err e
+
+        time =
+            Json.Decode.decodeValue (Json.Decode.field "epoch" Json.Decode.int) flags
+                -- TODO maybe handle the error case in a better way
+                |> Result.withDefault 0
+                |> Time.millisToPosix
     in
-    ( Model Waiting nextUrl, Cmd.none )
+    ( Model Waiting nextUrl time, Cmd.none )
 
 
 type alias Model =
     { common : CommonModel
     , nextUrl : Result String Url.Url
+    , pageLoadTime : Time.Posix
     }
 
 
@@ -86,6 +94,7 @@ type CommonModel
 type alias ResolvedModel =
     { common : C.Model
     , nextUrl : Url.Url
+    , pageLoadTime : Time.Posix
     }
 
 
@@ -93,7 +102,7 @@ toResolvedModel : Model -> Result String ResolvedModel
 toResolvedModel model =
     case ( model.common, model.nextUrl ) of
         ( Valid commonModel, Ok url ) ->
-            Ok (ResolvedModel commonModel url)
+            Ok (ResolvedModel commonModel url model.pageLoadTime)
 
         ( Invalid invalidErr, _ ) ->
             Err ("Cannot resolve because common model is invalid: " ++ invalidErr)
@@ -146,7 +155,12 @@ view model =
 
 viewResolved : ResolvedModel -> Html Msg
 viewResolved rm =
-    Html.text ("You were going to " ++ rm.nextUrl.host)
+    Html.text
+        ("You were going to "
+            ++ rm.nextUrl.host
+            ++ " and this page loaded at "
+            ++ (String.fromInt <| Time.posixToMillis <| rm.pageLoadTime)
+        )
 
 
 subs : Sub Msg
