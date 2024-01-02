@@ -1,6 +1,7 @@
 port module Background exposing (..)
 
 import Common as C
+import Debug
 import Json.Decode
 import Json.Encode
 import Url
@@ -15,14 +16,15 @@ main =
         }
 
 
-type Msg
+type
+    Msg
+    -- TODO check time and remove exceptions when they expire
     = GotUrlChange Json.Encode.Value
     | GotMessage Json.Encode.Value
 
 
-checkIfRedirect : List String -> Url.Url -> Bool
-checkIfRedirect domains url =
-    -- TODO don't redirect if there's an exception
+checkIfRedirect : C.Model -> Url.Url -> Bool
+checkIfRedirect model url =
     let
         hostname =
             url.host
@@ -30,9 +32,16 @@ checkIfRedirect domains url =
         doesMatch : String -> Bool
         doesMatch domain =
             String.endsWith domain hostname
+
+        onRedirectList =
+            model.domainsToRedirect
+                |> List.any doesMatch
+
+        onExceptionList =
+            List.map .domain model.exceptions
+                |> List.any doesMatch
     in
-    domains
-        |> List.any doesMatch
+    onRedirectList && not onExceptionList
 
 
 update : Msg -> C.Model -> ( C.Model, Cmd msg )
@@ -66,7 +75,7 @@ innerUpdate msg model =
                 Ok ( tabId, urlStr ) ->
                     case Url.fromString urlStr of
                         Just url ->
-                            if checkIfRedirect model.domainsToRedirect url then
+                            if checkIfRedirect model url then
                                 ( model
                                 , setRedirect
                                     (encodeRedirect tabId <|
