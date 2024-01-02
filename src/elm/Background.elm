@@ -93,6 +93,7 @@ init flags =
     ( { domainsToRedirect =
             [ "reddit.com"
             ]
+      , exceptions = []
       }
     , Cmd.none
     )

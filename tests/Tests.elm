@@ -4,16 +4,17 @@ import Common as C
 import Expect
 import Json.Decode
 import Test exposing (..)
+import Time
 
 
 testModel : C.Model
 testModel =
-    C.Model [ "reddit.com" ]
+    C.Model [ "reddit.com" ] [ testException ]
 
 
 testException : C.Exception
 testException =
-    C.Exception "facebook.com"
+    C.Exception "facebook.com" (Time.millisToPosix 1704223664)
 
 
 modelRoundTrip : Test

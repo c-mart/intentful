@@ -2,18 +2,21 @@ module Common exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Time
 
 
 type alias Model =
     { domainsToRedirect : List String
+    , exceptions : List Exception
     }
 
 
 modelDecoder =
-    Json.Decode.map Model
+    Json.Decode.map2 Model
         (Json.Decode.field "domainsToRedirect"
             (Json.Decode.list Json.Decode.string)
         )
+        (Json.Decode.field "exceptions" (Json.Decode.list decodeException))
 
 
 encodeModel : Model -> Json.Encode.Value
@@ -22,11 +25,22 @@ encodeModel model =
         [ ( "domainsToRedirect"
           , Json.Encode.list Json.Encode.string model.domainsToRedirect
           )
+        , ( "exceptions", Json.Encode.list encodeException model.exceptions )
+        ]
+
+
+encodeException : Exception -> Json.Encode.Value
+encodeException exception =
+    Json.Encode.object
+        [ ( "domain", Json.Encode.string exception.domain )
+        , ( "endTime", Json.Encode.int <| Time.posixToMillis exception.endTime )
         ]
 
 
 type alias Exception =
-    { domain : String }
+    { domain : String
+    , endTime : Time.Posix
+    }
 
 
 type MessageFromInterceptPage
@@ -43,10 +57,7 @@ encodeMessageFromInterceptPage message =
         NewException exception ->
             Json.Encode.object
                 [ ( "tag", Json.Encode.string "new-exception" )
-                , ( "exception"
-                  , Json.Encode.object
-                        [ ( "domain", Json.Encode.string exception.domain ) ]
-                  )
+                , ( "exception", encodeException exception )
                 ]
 
 
@@ -63,15 +74,21 @@ decodeMessageFromInterceptPage =
                     Json.Decode.succeed RequestModel
 
                 "new-exception" ->
-                    Json.Decode.at [ "exception", "domain" ] Json.Decode.string
-                        |> Json.Decode.map Exception
-                        |> Json.Decode.map NewException
+                    Json.Decode.map NewException <|
+                        Json.Decode.field "exception" decodeException
 
                 _ ->
                     Json.Decode.fail "Unrecognized message tag"
     in
     Json.Decode.field "tag" Json.Decode.string
         |> Json.Decode.andThen decode
+
+
+decodeException : Json.Decode.Decoder Exception
+decodeException =
+    Json.Decode.map2 Exception
+        (Json.Decode.field "domain" Json.Decode.string)
+        (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
 
 
 type MessageFromBackgroundScript
