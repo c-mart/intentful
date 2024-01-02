@@ -145,8 +145,8 @@ view model =
 
 
 viewResolved : ResolvedModel -> Html Msg
-viewResolved model =
-    Html.text "todo show resolved model"
+viewResolved rm =
+    Html.text ("You were going to " ++ rm.nextUrl.host)
 
 
 subs : Sub Msg
