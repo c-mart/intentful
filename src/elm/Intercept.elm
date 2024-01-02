@@ -213,7 +213,14 @@ viewResolved rm =
         , case canCreateException rm of
             CanCreate ->
                 -- TODO form field to choose end time, don't just pass current time
-                Html.button [ HtmlE.onClick (GotCreateException rm.nextUrl rm.currentTime) ] [ Html.text "Create exception" ]
+                let
+                    expireTime =
+                        rm.currentTime
+                            |> Time.posixToMillis
+                            |> (+) 20000
+                            |> Time.millisToPosix
+                in
+                Html.button [ HtmlE.onClick (GotCreateException rm.nextUrl expireTime) ] [ Html.text "Create exception" ]
 
             WaitToCreate waitRemainMillis ->
                 Html.text ("You must wait " ++ String.fromInt waitRemainMillis ++ " to create an exception")
