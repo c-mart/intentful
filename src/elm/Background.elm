@@ -4,6 +4,7 @@ import Common as C
 import Debug
 import Json.Decode
 import Json.Encode
+import Time
 import Url
 
 
@@ -16,11 +17,10 @@ main =
         }
 
 
-type
-    Msg
-    -- TODO check time and remove exceptions when they expire
+type Msg
     = GotUrlChange Json.Encode.Value
     | GotMessage Json.Encode.Value
+    | GotCurrentTime Time.Posix
 
 
 checkIfRedirect : C.Model -> Url.Url -> Bool
@@ -97,6 +97,17 @@ innerUpdate msg model =
                     -- TODO complain?
                     ( model, Cmd.none )
 
+        GotCurrentTime time ->
+            let
+                keepException : C.Exception -> Bool
+                keepException e =
+                    Time.posixToMillis e.endTime > Time.posixToMillis time
+
+                newExceptions =
+                    List.filter keepException model.exceptions
+            in
+            ( { model | exceptions = newExceptions }, Cmd.none )
+
 
 init flags =
     ( { domainsToRedirect =
@@ -112,6 +123,7 @@ subs _ =
     Sub.batch
         [ getUrlChange GotUrlChange
         , receiveMessage GotMessage
+        , Time.every 5000 GotCurrentTime
         ]
 
 
