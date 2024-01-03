@@ -23,27 +23,6 @@ type Msg
     | GotCurrentTime Time.Posix
 
 
-checkIfRedirect : C.Model -> Url.Url -> Bool
-checkIfRedirect model url =
-    let
-        hostname =
-            url.host
-
-        doesMatch : String -> Bool
-        doesMatch domain =
-            String.endsWith domain hostname
-
-        onRedirectList =
-            model.domainsToRedirect
-                |> List.any doesMatch
-
-        onExceptionList =
-            List.map .domain model.exceptions
-                |> List.any doesMatch
-    in
-    onRedirectList && not onExceptionList
-
-
 update : Msg -> C.Model -> ( C.Model, Cmd msg )
 update msg model =
     let
@@ -75,7 +54,7 @@ innerUpdate msg model =
                 Ok ( tabId, urlStr ) ->
                     case Url.fromString urlStr of
                         Just url ->
-                            if checkIfRedirect model url then
+                            if C.checkIfIntercept model url then
                                 ( model
                                 , setRedirect
                                     (encodeRedirect tabId <|

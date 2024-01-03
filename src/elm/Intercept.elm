@@ -192,6 +192,7 @@ update msg model =
                 Ok message ->
                     case message of
                         C.SendModel commonModel ->
+                            -- TODO if there's now an exception for nextUrl, navigate there.
                             ( { model | common = Valid commonModel }, Cmd.none )
 
                 Err e ->

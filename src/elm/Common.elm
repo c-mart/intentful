@@ -3,6 +3,7 @@ module Common exposing (..)
 import Json.Decode
 import Json.Encode
 import Time
+import Url
 
 
 type alias Model =
@@ -123,3 +124,24 @@ decodeMessageFromBackgroundScript =
     in
     Json.Decode.field "tag" Json.Decode.string
         |> Json.Decode.andThen decode
+
+
+checkIfIntercept : Model -> Url.Url -> Bool
+checkIfIntercept model url =
+    let
+        hostname =
+            url.host
+
+        doesMatch : String -> Bool
+        doesMatch domain =
+            String.endsWith domain hostname
+
+        onRedirectList =
+            model.domainsToRedirect
+                |> List.any doesMatch
+
+        onExceptionList =
+            List.map .domain model.exceptions
+                |> List.any doesMatch
+    in
+    onRedirectList && not onExceptionList
