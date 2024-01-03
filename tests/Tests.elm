@@ -56,7 +56,7 @@ messageRoundTrip =
                             Expect.equal (Ok message.m)
                                 (message.m
                                     |> C.encodeMessageFromInterceptPage
-                                    |> Json.Decode.decodeValue C.decodeMessageFromInterceptPage
+                                    |> Json.Decode.decodeValue C.messageFromInterceptPageDecoder
                                 )
                 )
                 messagesFromInterceptPage

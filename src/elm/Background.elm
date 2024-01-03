@@ -36,7 +36,7 @@ innerUpdate : Msg -> C.Model -> ( C.Model, Cmd msg )
 innerUpdate msg model =
     case msg of
         GotMessage value ->
-            case Json.Decode.decodeValue C.decodeMessageFromInterceptPage value of
+            case Json.Decode.decodeValue C.messageFromInterceptPageDecoder value of
                 Ok message ->
                     case message of
                         C.RequestModel ->

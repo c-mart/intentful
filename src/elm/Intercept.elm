@@ -189,7 +189,7 @@ update : Msg -> Model -> ( Model, Cmd a )
 update msg model =
     case msg of
         ReceiveMessage value ->
-            case Json.Decode.decodeValue C.decodeMessageFromBackgroundScript value of
+            case Json.Decode.decodeValue C.messageFromBackgroundScriptDecoder value of
                 Ok message ->
                     case message of
                         C.SendModel commonModel ->

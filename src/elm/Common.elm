@@ -80,27 +80,24 @@ encodeMessageFromInterceptPage message =
 -- Decoders
 
 
+modelDecoder : Json.Decode.Decoder Model
 modelDecoder =
     Json.Decode.map2 Model
         (Json.Decode.field "domainsToRedirect"
             (Json.Decode.list Json.Decode.string)
         )
-        (Json.Decode.field "exceptions" (Json.Decode.list decodeException))
+        (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
 
 
-decodeException : Json.Decode.Decoder Exception
-decodeException =
+exceptionDecoder : Json.Decode.Decoder Exception
+exceptionDecoder =
     Json.Decode.map2 Exception
         (Json.Decode.field "domain" Json.Decode.string)
         (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
 
 
-
--- TODO rename to messageFromInterceptPageDecoder
-
-
-decodeMessageFromInterceptPage : Json.Decode.Decoder MessageFromInterceptPage
-decodeMessageFromInterceptPage =
+messageFromInterceptPageDecoder : Json.Decode.Decoder MessageFromInterceptPage
+messageFromInterceptPageDecoder =
     let
         decode tag =
             case tag of
@@ -109,7 +106,7 @@ decodeMessageFromInterceptPage =
 
                 "new-exception" ->
                     Json.Decode.map NewException <|
-                        Json.Decode.field "exception" decodeException
+                        Json.Decode.field "exception" exceptionDecoder
 
                 _ ->
                     Json.Decode.fail "Unrecognized message tag"
@@ -118,12 +115,8 @@ decodeMessageFromInterceptPage =
         |> Json.Decode.andThen decode
 
 
-
--- TODO rename to messageFromInterceptPageDecoder
-
-
-decodeMessageFromBackgroundScript : Json.Decode.Decoder MessageFromBackgroundScript
-decodeMessageFromBackgroundScript =
+messageFromBackgroundScriptDecoder : Json.Decode.Decoder MessageFromBackgroundScript
+messageFromBackgroundScriptDecoder =
     let
         decode tag =
             case tag of
