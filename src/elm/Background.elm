@@ -8,6 +8,36 @@ import Time
 import Url
 
 
+
+-- Primary types
+
+
+type Msg
+    = GotUrlChange Json.Encode.Value
+    | GotMessage Json.Encode.Value
+    | GotCurrentTime Time.Posix
+
+
+
+-- Ports
+
+
+port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg
+
+
+port sendMessage : Json.Encode.Value -> Cmd msg
+
+
+port getUrlChange : (Json.Encode.Value -> msg) -> Sub msg
+
+
+port setRedirect : Json.Encode.Value -> Cmd msg
+
+
+
+-- Primary functions
+
+
 main : Program Json.Decode.Value C.Model Msg
 main =
     Platform.worker
@@ -17,10 +47,14 @@ main =
         }
 
 
-type Msg
-    = GotUrlChange Json.Encode.Value
-    | GotMessage Json.Encode.Value
-    | GotCurrentTime Time.Posix
+init flags =
+    ( { domainsToRedirect =
+            [ "reddit.com"
+            ]
+      , exceptions = []
+      }
+    , Cmd.none
+    )
 
 
 update : Msg -> C.Model -> ( C.Model, Cmd msg )
@@ -30,6 +64,18 @@ update msg model =
             innerUpdate msg model
     in
     ( newModel, Cmd.batch [ cmd, sendMessage <| C.encodeMessageFromBackgroundScript (C.SendModel newModel) ] )
+
+
+subs _ =
+    Sub.batch
+        [ getUrlChange GotUrlChange
+        , receiveMessage GotMessage
+        , Time.every 5000 GotCurrentTime
+        ]
+
+
+
+-- Helper functions
 
 
 innerUpdate : Msg -> C.Model -> ( C.Model, Cmd msg )
@@ -88,34 +134,12 @@ innerUpdate msg model =
             ( { model | exceptions = newExceptions }, Cmd.none )
 
 
-init flags =
-    ( { domainsToRedirect =
-            [ "reddit.com"
-            ]
-      , exceptions = []
-      }
-    , Cmd.none
-    )
-
-
-subs _ =
-    Sub.batch
-        [ getUrlChange GotUrlChange
-        , receiveMessage GotMessage
-        , Time.every 5000 GotCurrentTime
+encodeRedirect : Int -> String -> Json.Encode.Value
+encodeRedirect tabId url =
+    Json.Encode.object
+        [ ( "tabId", Json.Encode.int tabId )
+        , ( "url", Json.Encode.string url )
         ]
-
-
-port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg
-
-
-port sendMessage : Json.Encode.Value -> Cmd msg
-
-
-port getUrlChange : (Json.Encode.Value -> msg) -> Sub msg
-
-
-port setRedirect : Json.Encode.Value -> Cmd msg
 
 
 decodeUrlChange : Json.Decode.Value -> Result Json.Decode.Error ( Int, String )
@@ -127,11 +151,3 @@ decodeUrlChange urlChangeJson =
                 (Json.Decode.field "url" Json.Decode.string)
     in
     Json.Decode.decodeValue urlChangeDecoder urlChangeJson
-
-
-encodeRedirect : Int -> String -> Json.Encode.Value
-encodeRedirect tabId url =
-    Json.Encode.object
-        [ ( "tabId", Json.Encode.int tabId )
-        , ( "url", Json.Encode.string url )
-        ]
