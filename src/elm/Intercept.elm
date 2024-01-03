@@ -2,6 +2,7 @@ port module Intercept exposing (..)
 
 import Background exposing (Msg(..))
 import Browser
+import Browser.Navigation
 import Common as C
 import Debug
 import Html exposing (Html)
@@ -192,8 +193,18 @@ update msg model =
                 Ok message ->
                     case message of
                         C.SendModel commonModel ->
-                            -- TODO if there's now an exception for nextUrl, navigate there.
-                            ( { model | common = Valid commonModel }, Cmd.none )
+                            ( { model | common = Valid commonModel }
+                            , case model.nextUrl of
+                                Ok url ->
+                                    if C.checkIfIntercept commonModel url then
+                                        Cmd.none
+
+                                    else
+                                        Browser.Navigation.load (Url.toString url)
+
+                                Err _ ->
+                                    Cmd.none
+                            )
 
                 Err e ->
                     -- TODO something with this error
