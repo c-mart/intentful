@@ -6,18 +6,33 @@ import Time
 import Url
 
 
+
+-- Types
+
+
 type alias Model =
     { domainsToRedirect : List String
     , exceptions : List Exception
     }
 
 
-modelDecoder =
-    Json.Decode.map2 Model
-        (Json.Decode.field "domainsToRedirect"
-            (Json.Decode.list Json.Decode.string)
-        )
-        (Json.Decode.field "exceptions" (Json.Decode.list decodeException))
+type alias Exception =
+    { domain : String
+    , endTime : Time.Posix
+    }
+
+
+type MessageFromBackgroundScript
+    = SendModel Model
+
+
+type MessageFromInterceptPage
+    = RequestModel
+    | NewException Exception
+
+
+
+-- Encoders
 
 
 encodeModel : Model -> Json.Encode.Value
@@ -38,15 +53,14 @@ encodeException exception =
         ]
 
 
-type alias Exception =
-    { domain : String
-    , endTime : Time.Posix
-    }
-
-
-type MessageFromInterceptPage
-    = RequestModel
-    | NewException Exception
+encodeMessageFromBackgroundScript : MessageFromBackgroundScript -> Json.Encode.Value
+encodeMessageFromBackgroundScript message =
+    case message of
+        SendModel model ->
+            Json.Encode.object
+                [ ( "tag", Json.Encode.string "send-model" )
+                , ( "model", encodeModel model )
+                ]
 
 
 encodeMessageFromInterceptPage : MessageFromInterceptPage -> Json.Encode.Value
@@ -60,6 +74,25 @@ encodeMessageFromInterceptPage message =
                 [ ( "tag", Json.Encode.string "new-exception" )
                 , ( "exception", encodeException exception )
                 ]
+
+
+
+-- Decoders
+
+
+modelDecoder =
+    Json.Decode.map2 Model
+        (Json.Decode.field "domainsToRedirect"
+            (Json.Decode.list Json.Decode.string)
+        )
+        (Json.Decode.field "exceptions" (Json.Decode.list decodeException))
+
+
+decodeException : Json.Decode.Decoder Exception
+decodeException =
+    Json.Decode.map2 Exception
+        (Json.Decode.field "domain" Json.Decode.string)
+        (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
 
 
 
@@ -85,27 +118,6 @@ decodeMessageFromInterceptPage =
         |> Json.Decode.andThen decode
 
 
-decodeException : Json.Decode.Decoder Exception
-decodeException =
-    Json.Decode.map2 Exception
-        (Json.Decode.field "domain" Json.Decode.string)
-        (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
-
-
-type MessageFromBackgroundScript
-    = SendModel Model
-
-
-encodeMessageFromBackgroundScript : MessageFromBackgroundScript -> Json.Encode.Value
-encodeMessageFromBackgroundScript message =
-    case message of
-        SendModel model ->
-            Json.Encode.object
-                [ ( "tag", Json.Encode.string "send-model" )
-                , ( "model", encodeModel model )
-                ]
-
-
 
 -- TODO rename to messageFromInterceptPageDecoder
 
@@ -124,6 +136,10 @@ decodeMessageFromBackgroundScript =
     in
     Json.Decode.field "tag" Json.Decode.string
         |> Json.Decode.andThen decode
+
+
+
+-- Helper functions
 
 
 checkIfIntercept : Model -> Url.Url -> Bool
