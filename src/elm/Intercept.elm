@@ -16,6 +16,77 @@ import Url.Parser exposing ((<?>))
 import Url.Parser.Query
 
 
+
+-- Primary types
+
+
+type alias Model =
+    { common : CommonModel
+    , nextUrl : Result String Url.Url
+    , pageLoadTime : Time.Posix
+    , currentTime : Time.Posix
+    , exceptionDurationInput : String
+    }
+
+
+type Msg
+    = ReceiveMessage Json.Encode.Value
+    | ReceiveCurrentTime Time.Posix
+    | GotCreateException Url.Url ExceptionEndTime
+    | GotExceptionDurationInput String
+
+
+
+-- Helper types
+
+
+type CommonModel
+    = Valid C.Model
+    | Invalid String
+    | Waiting
+
+
+type alias ResolvedModel =
+    { common : C.Model
+    , nextUrl : Url.Url
+    , pageLoadTime : Time.Posix
+    , currentTime : Time.Posix
+    , exceptionDurationInput : String
+    }
+
+
+type ExceptionCreatability
+    = CanCreate MinutesInt
+    | WaitToCreate TimeRemainingMillis
+    | InvalidDuration
+
+
+type alias TimeRemainingMillis =
+    Int
+
+
+type alias MinutesInt =
+    Int
+
+
+type alias ExceptionEndTime =
+    Time.Posix
+
+
+
+-- Ports
+
+
+port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg
+
+
+port sendMessage : Json.Encode.Value -> Cmd msg
+
+
+
+-- Primary functions
+
+
 main : Program Json.Encode.Value Model Msg
 main =
     Browser.element
@@ -81,110 +152,6 @@ init flags =
     ( Model Waiting nextUrl time time "2", Cmd.none )
 
 
-type alias Model =
-    { common : CommonModel
-    , nextUrl : Result String Url.Url
-    , pageLoadTime : Time.Posix
-    , currentTime : Time.Posix
-    , exceptionDurationInput : String
-    }
-
-
-type CommonModel
-    = Valid C.Model
-    | Invalid String
-    | Waiting
-
-
-type alias ResolvedModel =
-    { common : C.Model
-    , nextUrl : Url.Url
-    , pageLoadTime : Time.Posix
-    , currentTime : Time.Posix
-    , exceptionDurationInput : String
-    }
-
-
-type ExceptionCreatability
-    = CanCreate MinutesInt
-    | WaitToCreate TimeRemainingMillis
-    | InvalidDuration
-
-
-type alias TimeRemainingMillis =
-    Int
-
-
-canCreateException : ResolvedModel -> ExceptionCreatability
-canCreateException rm =
-    let
-        waitDurationMillis =
-            -- 10 seconds
-            10 * 1000 - 1
-
-        waitRemainMillis =
-            waitDurationMillis - (Time.posixToMillis rm.currentTime - Time.posixToMillis rm.pageLoadTime)
-    in
-    if waitRemainMillis > 0 then
-        WaitToCreate waitRemainMillis
-
-    else
-        case String.toInt rm.exceptionDurationInput of
-            Just i ->
-                CanCreate i
-
-            Nothing ->
-                InvalidDuration
-
-
-toResolvedModel : Model -> Result String ResolvedModel
-toResolvedModel model =
-    case ( model.common, model.nextUrl ) of
-        ( Valid commonModel, Ok url ) ->
-            Ok
-                (ResolvedModel
-                    commonModel
-                    url
-                    model.pageLoadTime
-                    model.currentTime
-                    model.exceptionDurationInput
-                )
-
-        ( Invalid invalidErr, _ ) ->
-            Err ("Cannot resolve because common model is invalid: " ++ invalidErr)
-
-        ( Waiting, _ ) ->
-            Err "Cannot resolve because waiting for common model"
-
-        ( _, Err urlErr ) ->
-            Err ("Cannot resolve because next URL is invalid: " ++ urlErr)
-
-
-decodeCommonModel : Json.Decode.Value -> CommonModel
-decodeCommonModel flags =
-    case Json.Decode.decodeValue C.modelDecoder flags of
-        Ok commonModel ->
-            Valid commonModel
-
-        Err e ->
-            Invalid (Json.Decode.errorToString e)
-
-
-type Msg
-    = ReceiveMessage Json.Encode.Value
-    | ReceiveCurrentTime Time.Posix
-    | GotCreateException Url.Url ExceptionEndTime
-    | GotExceptionDurationInput String
-
-
-type alias MinutesInt =
-    Int
-
-
-type alias ExceptionEndTime =
-    Time.Posix
-
-
 update : Msg -> Model -> ( Model, Cmd a )
 update msg model =
     case msg of
@@ -237,6 +204,51 @@ view model =
             Html.text ("Cannot render page: " ++ errStr)
 
 
+subs : Sub Msg
+subs =
+    Sub.batch
+        [ receiveMessage ReceiveMessage
+        , Time.every 1000 ReceiveCurrentTime
+        ]
+
+
+
+-- Helper functions
+
+
+decodeCommonModel : Json.Decode.Value -> CommonModel
+decodeCommonModel flags =
+    case Json.Decode.decodeValue C.modelDecoder flags of
+        Ok commonModel ->
+            Valid commonModel
+
+        Err e ->
+            Invalid (Json.Decode.errorToString e)
+
+
+toResolvedModel : Model -> Result String ResolvedModel
+toResolvedModel model =
+    case ( model.common, model.nextUrl ) of
+        ( Valid commonModel, Ok url ) ->
+            Ok
+                (ResolvedModel
+                    commonModel
+                    url
+                    model.pageLoadTime
+                    model.currentTime
+                    model.exceptionDurationInput
+                )
+
+        ( Invalid invalidErr, _ ) ->
+            Err ("Cannot resolve because common model is invalid: " ++ invalidErr)
+
+        ( Waiting, _ ) ->
+            Err "Cannot resolve because waiting for common model"
+
+        ( _, Err urlErr ) ->
+            Err ("Cannot resolve because next URL is invalid: " ++ urlErr)
+
+
 viewResolved : ResolvedModel -> Html Msg
 viewResolved rm =
     let
@@ -278,6 +290,28 @@ viewResolved rm =
         ]
 
 
+canCreateException : ResolvedModel -> ExceptionCreatability
+canCreateException rm =
+    let
+        waitDurationMillis =
+            -- 10 seconds
+            10 * 1000 - 1
+
+        waitRemainMillis =
+            waitDurationMillis - (Time.posixToMillis rm.currentTime - Time.posixToMillis rm.pageLoadTime)
+    in
+    if waitRemainMillis > 0 then
+        WaitToCreate waitRemainMillis
+
+    else
+        case String.toInt rm.exceptionDurationInput of
+            Just i ->
+                CanCreate i
+
+            Nothing ->
+                InvalidDuration
+
+
 countdownRemainText : Int -> String
 countdownRemainText millis =
     let
@@ -294,17 +328,3 @@ countdownRemainText millis =
             remainderBy 60 secs |> toPadStr
     in
     minsField ++ ":" ++ secsField
-
-
-subs : Sub Msg
-subs =
-    Sub.batch
-        [ receiveMessage ReceiveMessage
-        , Time.every 1000 ReceiveCurrentTime
-        ]
-
-
-port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg
-
-
-port sendMessage : Json.Encode.Value -> Cmd msg
