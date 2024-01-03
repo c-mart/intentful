@@ -124,6 +124,7 @@ innerUpdate msg model =
 
         GotCurrentTime time ->
             let
+                -- TODO when removing exception, redirect any tabs on that site to the intercept page.
                 keepException : C.Exception -> Bool
                 keepException e =
                     Time.posixToMillis e.endTime > Time.posixToMillis time
