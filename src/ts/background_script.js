@@ -17,7 +17,7 @@ backgroundApp.ports.requestTabs.subscribe(async function () {
 
 browser.webNavigation.onBeforeNavigate.addListener((details) => {
   backgroundApp.ports.getUrlChange.send({
-    tabId: details.tabId,
+    id: details.tabId,
     url: details.url,
   });
 
