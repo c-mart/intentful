@@ -29,7 +29,5 @@ browser.runtime.onMessage.addListener(
 );
 
 backgroundApp.ports.setStorage.subscribe(function (state) {
-  console.log("setting storage");
-  console.log(state);
   browser.storage.local.set(state).then(null, null);
 });
