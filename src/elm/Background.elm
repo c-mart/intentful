@@ -47,6 +47,9 @@ port requestTabs : () -> Cmd msg
 port receiveTabs : (Json.Encode.Value -> msg) -> Sub msg
 
 
+port setStorage : Json.Encode.Value -> Cmd msg
+
+
 
 -- Primary functions
 
@@ -61,12 +64,16 @@ main =
 
 
 init flags =
-    ( { domainsToRedirect =
-            [ "reddit.com"
-            ]
-      , exceptions = []
-      }
-    , requestTabs ()
+    let
+        model =
+            { domainsToRedirect =
+                [ "reddit.com"
+                ]
+            , exceptions = []
+            }
+    in
+    ( model
+    , Cmd.batch [ requestTabs (), setStorage (C.encodeModel model) ]
     )
 
 
@@ -76,7 +83,17 @@ update msg model =
         ( newModel, cmd ) =
             innerUpdate msg model
     in
-    ( newModel, Cmd.batch [ cmd, sendMessage <| C.encodeMessageFromBackgroundScript (C.SendModel newModel) ] )
+    ( newModel
+    , Cmd.batch
+        [ cmd
+        , if newModel /= model then
+            setStorage (C.encodeModel newModel)
+
+          else
+            Cmd.none
+        , sendMessage <| C.encodeMessageFromBackgroundScript (C.SendModel newModel)
+        ]
+    )
 
 
 subs _ =

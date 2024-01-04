@@ -27,3 +27,9 @@ browser.webNavigation.onBeforeNavigate.addListener((details) => {
 browser.runtime.onMessage.addListener(
   backgroundApp.ports.receiveMessage.send,
 );
+
+backgroundApp.ports.setStorage.subscribe(function (state) {
+  console.log("setting storage");
+  console.log(state);
+  browser.storage.local.set(state).then(null, null);
+});
