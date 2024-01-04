@@ -10,6 +10,11 @@ backgroundApp.ports.sendMessage.subscribe(function (message) {
   browser.runtime.sendMessage(message);
 });
 
+backgroundApp.ports.requestTabs.subscribe(async function () {
+  const tabs = await browser.tabs.query({});
+  backgroundApp.ports.receiveTabs.send(tabs);
+});
+
 browser.webNavigation.onBeforeNavigate.addListener((details) => {
   backgroundApp.ports.getUrlChange.send({
     tabId: details.tabId,

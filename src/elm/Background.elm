@@ -16,6 +16,13 @@ type Msg
     = GotUrlChange Json.Encode.Value
     | GotMessage Json.Encode.Value
     | GotCurrentTime Time.Posix
+    | GotTabs Json.Encode.Value
+
+
+type alias Tab =
+    { id : Int
+    , url : String
+    }
 
 
 
@@ -32,6 +39,12 @@ port getUrlChange : (Json.Encode.Value -> msg) -> Sub msg
 
 
 port setRedirect : Json.Encode.Value -> Cmd msg
+
+
+port requestTabs : () -> Cmd msg
+
+
+port receiveTabs : (Json.Encode.Value -> msg) -> Sub msg
 
 
 
@@ -53,7 +66,7 @@ init flags =
             ]
       , exceptions = []
       }
-    , Cmd.none
+    , requestTabs ()
     )
 
 
@@ -70,6 +83,7 @@ subs _ =
     Sub.batch
         [ getUrlChange GotUrlChange
         , receiveMessage GotMessage
+        , receiveTabs GotTabs
         , Time.every 5000 GotCurrentTime
         ]
 
@@ -97,26 +111,8 @@ innerUpdate msg model =
 
         GotUrlChange urlChangeJson ->
             case decodeUrlChange urlChangeJson of
-                Ok ( tabId, urlStr ) ->
-                    case Url.fromString urlStr of
-                        Just url ->
-                            if C.checkIfIntercept model url then
-                                ( model
-                                , setRedirect
-                                    (encodeRedirect tabId <|
-                                        String.concat
-                                            [ "/intercept.html?next="
-                                            , url |> Url.toString |> Url.percentEncode
-                                            ]
-                                    )
-                                )
-
-                            else
-                                ( model, Cmd.none )
-
-                        Nothing ->
-                            -- TODO complain?
-                            ( model, Cmd.none )
+                Ok tab ->
+                    ( model, processTab model tab )
 
                 Err _ ->
                     -- TODO complain?
@@ -124,15 +120,51 @@ innerUpdate msg model =
 
         GotCurrentTime time ->
             let
-                -- TODO when removing exception, redirect any tabs on that site to the intercept page.
                 keepException : C.Exception -> Bool
                 keepException e =
                     Time.posixToMillis e.endTime > Time.posixToMillis time
 
                 newExceptions =
                     List.filter keepException model.exceptions
+
+                cmd =
+                    if newExceptions /= model.exceptions then
+                        requestTabs ()
+
+                    else
+                        Cmd.none
             in
-            ( { model | exceptions = newExceptions }, Cmd.none )
+            ( { model | exceptions = newExceptions }, cmd )
+
+        GotTabs tabsJson ->
+            case decodeTabs tabsJson of
+                Ok tabs ->
+                    ( model, Cmd.batch <| List.map (processTab model) tabs )
+
+                Err e ->
+                    -- TODO complain?
+                    ( model, Cmd.none )
+
+
+processTab : C.Model -> Tab -> Cmd msg
+processTab model tab =
+    case Url.fromString tab.url of
+        Just url ->
+            if C.checkIfIntercept model url then
+                setRedirect
+                    (encodeRedirect tab.id <|
+                        String.concat
+                            [ "/intercept.html?next="
+                            , url |> Url.toString |> Url.percentEncode
+                            ]
+                    )
+
+            else
+                Cmd.none
+
+        Nothing ->
+            -- TODO complain?
+            Cmd.none
 
 
 encodeRedirect : Int -> String -> Json.Encode.Value
@@ -143,12 +175,18 @@ encodeRedirect tabId url =
         ]
 
 
-decodeUrlChange : Json.Decode.Value -> Result Json.Decode.Error ( Int, String )
+decodeUrlChange : Json.Decode.Value -> Result Json.Decode.Error Tab
 decodeUrlChange urlChangeJson =
-    let
-        urlChangeDecoder =
-            Json.Decode.map2 Tuple.pair
-                (Json.Decode.field "tabId" Json.Decode.int)
-                (Json.Decode.field "url" Json.Decode.string)
-    in
-    Json.Decode.decodeValue urlChangeDecoder urlChangeJson
+    Json.Decode.decodeValue tabDecoder urlChangeJson
+
+
+decodeTabs : Json.Decode.Value -> Result Json.Decode.Error (List Tab)
+decodeTabs tabsJson =
+    Json.Decode.decodeValue (Json.Decode.list tabDecoder) tabsJson
+
+
+tabDecoder : Json.Decode.Decoder Tab
+tabDecoder =
+    Json.Decode.map2 Tab
+        (Json.Decode.field "id" Json.Decode.int)
+        (Json.Decode.field "url" Json.Decode.string)

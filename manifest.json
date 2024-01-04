@@ -36,6 +36,7 @@
     "browser_style": false
   },
   "permissions": [
-    "webNavigation"
+    "webNavigation",
+    "tabs"
   ]
 }
