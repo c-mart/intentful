@@ -31,3 +31,7 @@ browser.runtime.onMessage.addListener(
 backgroundApp.ports.setStorage.subscribe(function (state) {
   browser.storage.local.set(state).then(null, null);
 });
+
+backgroundApp.ports.consoleLog.subscribe(function (e) {
+  console.log(e);
+});

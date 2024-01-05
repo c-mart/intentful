@@ -50,6 +50,9 @@ port receiveTabs : (Json.Encode.Value -> msg) -> Sub msg
 port setStorage : Json.Encode.Value -> Cmd msg
 
 
+port consoleLog : String -> Cmd msg
+
+
 
 -- Primary functions
 
@@ -123,17 +126,19 @@ innerUpdate msg model =
                             ( { model | exceptions = exception :: model.exceptions }, Cmd.none )
 
                 Err e ->
-                    -- TODO something with this error
-                    ( model, Cmd.none )
+                    ( model
+                    , logJsonError "Could not decode message" e
+                    )
 
         GotUrlChange urlChangeJson ->
             case decodeUrlChange urlChangeJson of
                 Ok tab ->
                     ( model, processTab model tab )
 
-                Err _ ->
-                    -- TODO complain?
-                    ( model, Cmd.none )
+                Err e ->
+                    ( model
+                    , logJsonError "Could not decode URL change" e
+                    )
 
         GotCurrentTime time ->
             let
@@ -159,8 +164,18 @@ innerUpdate msg model =
                     ( model, Cmd.batch <| List.map (processTab model) tabs )
 
                 Err e ->
-                    -- TODO complain?
-                    ( model, Cmd.none )
+                    ( model
+                    , logJsonError "Could not decode tabs" e
+                    )
+
+
+logJsonError : String -> Json.Decode.Error -> Cmd msg
+logJsonError description e =
+    let
+        eStr =
+            description ++ ": " ++ Json.Decode.errorToString e
+    in
+    consoleLog eStr
 
 
 processTab : C.Model -> Tab -> Cmd msg
@@ -180,8 +195,7 @@ processTab model tab =
                 Cmd.none
 
         Nothing ->
-            -- TODO complain?
-            Cmd.none
+            consoleLog ("Could not parse URL from string: " ++ tab.url)
 
 
 encodeRedirect : Int -> String -> Json.Encode.Value
