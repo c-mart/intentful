@@ -66,14 +66,21 @@ main =
         }
 
 
+init : Json.Decode.Value -> ( C.Model, Cmd msg )
 init flags =
     let
+        storedModelResult =
+            Json.Decode.decodeValue (Json.Decode.field "storedState" C.modelDecoder) flags
+
         model =
-            { domainsToRedirect =
-                [ "reddit.com"
-                ]
-            , exceptions = []
-            }
+            storedModelResult
+                |> Result.withDefault
+                    -- Empty model because could not decode local storage
+                    { domainsToRedirect =
+                        [ "reddit.com"
+                        ]
+                    , exceptions = []
+                    }
     in
     ( model
     , Cmd.batch [ requestTabs (), setStorage (C.encodeModel model) ]

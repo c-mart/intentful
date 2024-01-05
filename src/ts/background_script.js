@@ -1,37 +1,48 @@
 import "./elm-background.js";
 
-const backgroundApp = Elm.Background.init();
+let gettingStoredState = browser.storage.local.get();
 
-backgroundApp.ports.setRedirect.subscribe(function ({ tabId, url }) {
-  browser.tabs.update(tabId, { url: url });
-});
+gettingStoredState.then(onGot, onError);
 
-backgroundApp.ports.sendMessage.subscribe(function (message) {
-  browser.runtime.sendMessage(message);
-});
+function onGot(storedState) {
+  const backgroundApp = Elm.Background.init({ flags: { "storedState": storedState } });
 
-backgroundApp.ports.requestTabs.subscribe(async function () {
-  const tabs = await browser.tabs.query({});
-  backgroundApp.ports.receiveTabs.send(tabs);
-});
-
-browser.webNavigation.onBeforeNavigate.addListener((details) => {
-  backgroundApp.ports.getUrlChange.send({
-    id: details.tabId,
-    url: details.url,
+  backgroundApp.ports.setRedirect.subscribe(function ({ tabId, url }) {
+    browser.tabs.update(tabId, { url: url });
   });
 
-  return;
-});
+  backgroundApp.ports.sendMessage.subscribe(function (message) {
+    browser.runtime.sendMessage(message);
+  });
 
-browser.runtime.onMessage.addListener(
-  backgroundApp.ports.receiveMessage.send,
-);
+  backgroundApp.ports.requestTabs.subscribe(async function () {
+    const tabs = await browser.tabs.query({});
+    backgroundApp.ports.receiveTabs.send(tabs);
+  });
 
-backgroundApp.ports.setStorage.subscribe(function (state) {
-  browser.storage.local.set(state).then(null, null);
-});
+  browser.webNavigation.onBeforeNavigate.addListener((details) => {
+    backgroundApp.ports.getUrlChange.send({
+      id: details.tabId,
+      url: details.url,
+    });
 
-backgroundApp.ports.consoleLog.subscribe(function (e) {
-  console.log(e);
-});
+    return;
+  });
+
+  browser.runtime.onMessage.addListener(
+    backgroundApp.ports.receiveMessage.send,
+  );
+
+  backgroundApp.ports.setStorage.subscribe(function (state) {
+    browser.storage.local.set(state).then(null, null);
+  });
+
+  backgroundApp.ports.consoleLog.subscribe(function (e) {
+    console.log(e);
+  });
+}
+
+function onError(error) {
+  console.log(`Error: ${error}`);
+}
+
