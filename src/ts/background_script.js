@@ -1,5 +1,10 @@
 import "./elm-background.js";
 
+browser.webNavigation.onBeforeNavigate.addListener(() => {
+  // Doing this again synchronously because we cannot register an event listener from the async code below
+  return;
+});
+
 let gettingStoredState = browser.storage.local.get();
 
 gettingStoredState.then(onGot, onError);
