@@ -4,6 +4,7 @@ import Common as C
 import Debug
 import Json.Decode
 import Json.Encode
+import Task
 import Time
 import Url
 
@@ -17,6 +18,7 @@ type Msg
     | GotMessage Json.Encode.Value
     | GotCurrentTime Time.Posix
     | GotTabs Json.Encode.Value
+    | GotAlarm Json.Encode.Value
 
 
 type alias Tab =
@@ -53,6 +55,9 @@ port setStorage : Json.Encode.Value -> Cmd msg
 port consoleLog : String -> Cmd msg
 
 
+port receiveAlarm : (Json.Encode.Value -> msg) -> Sub msg
+
+
 
 -- Primary functions
 
@@ -87,7 +92,7 @@ init flags =
     )
 
 
-update : Msg -> C.Model -> ( C.Model, Cmd msg )
+update : Msg -> C.Model -> ( C.Model, Cmd Msg )
 update msg model =
     let
         ( newModel, cmd ) =
@@ -111,6 +116,7 @@ subs _ =
         [ getUrlChange GotUrlChange
         , receiveMessage GotMessage
         , receiveTabs GotTabs
+        , receiveAlarm GotAlarm
         , Time.every 5000 GotCurrentTime
         ]
 
@@ -119,7 +125,7 @@ subs _ =
 -- Helper functions
 
 
-innerUpdate : Msg -> C.Model -> ( C.Model, Cmd msg )
+innerUpdate : Msg -> C.Model -> ( C.Model, Cmd Msg )
 innerUpdate msg model =
     case msg of
         GotMessage value ->
@@ -146,6 +152,9 @@ innerUpdate msg model =
                     ( model
                     , logJsonError "Could not decode URL change" e
                     )
+
+        GotAlarm _ ->
+            ( model, Task.perform GotCurrentTime Time.now )
 
         GotCurrentTime time ->
             let

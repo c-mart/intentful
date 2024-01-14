@@ -12,6 +12,12 @@ gettingStoredState.then(onGot, onError);
 function onGot(storedState) {
   const backgroundApp = Elm.Background.init({ flags: { "storedState": storedState } });
 
+  // Per https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/alarms/create, Chrome will override this to 1 minute, but Firefox supports sub-minute wake-up intervals.
+  const periodInMinutes = 0.25;
+  browser.alarms.create("wake-up", { periodInMinutes });
+  browser.alarms.onAlarm.addListener(backgroundApp.ports.receiveAlarm.send);
+
+
   backgroundApp.ports.setRedirect.subscribe(function ({ tabId, url }) {
     browser.tabs.update(tabId, { url: url });
   });
