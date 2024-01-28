@@ -28,7 +28,7 @@
     "default_icon": {
       "64": "icons/icon.png"
     },
-    "default_popup": "browserAction/index.html",
+    "default_popup": "browser_action.html",
     "default_title": "Intentful"
   },
   "options_ui": {
