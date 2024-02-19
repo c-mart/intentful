@@ -1,13 +1,11 @@
 "use strict";
 
-let elmAppInitialized = false;
-// TODO refactor to combine these
 let app;
 
 browser.runtime.onMessage.addListener(receiveMessage);
 
 function receiveMessage(message) {
-  if (!elmAppInitialized && message.tag === "send-model") {
+  if (app === undefined && message.tag === "send-model") {
 
     app = Elm.Intercept.init({
       node: document.getElementById("elm-app-is-loaded-here"),
@@ -18,9 +16,7 @@ function receiveMessage(message) {
       browser.runtime.sendMessage(message);
     });
 
-    elmAppInitialized = true;
-
-  } else if (elmAppInitialized) {
+  } else if (app !== undefined) {
 
     app.ports.receiveMessage.send(message);
 
