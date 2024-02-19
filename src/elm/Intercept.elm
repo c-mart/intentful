@@ -3,6 +3,7 @@ port module Intercept exposing (..)
 import Background exposing (Msg(..))
 import Browser
 import Browser.Navigation
+import BrowserAction exposing (CommonModel)
 import Common as C
 import Debug
 import Html exposing (Html)
@@ -18,6 +19,11 @@ import Url.Parser.Query
 
 
 -- Primary types
+
+
+type AppValidity
+    = AppValid Model
+    | AppInvalid String
 
 
 type alias Model =
@@ -87,7 +93,7 @@ port sendMessage : Json.Encode.Value -> Cmd msg
 -- Primary functions
 
 
-main : Program Json.Encode.Value Model Msg
+main : Program Json.Encode.Value AppValidity Msg
 main =
     Browser.element
         { init = init
@@ -97,7 +103,7 @@ main =
         }
 
 
-init : Json.Decode.Value -> ( Model, Cmd Msg )
+init : Json.Decode.Value -> ( AppValidity, Cmd Msg )
 init flags =
     let
         hrefStr =
@@ -148,12 +154,35 @@ init flags =
                 -- TODO maybe handle the error case in a better way
                 |> Result.withDefault 0
                 |> Time.millisToPosix
+
+        commonModel =
+            Json.Decode.decodeValue (Json.Decode.field "common-model" C.modelDecoder) flags
     in
-    ( Model Waiting nextUrl time time "2", Cmd.none )
+    case commonModel of
+        Ok m ->
+            ( AppValid <| Model (Valid m) nextUrl time time "2", Cmd.none )
+
+        Err decodeErr ->
+            ( AppInvalid (Json.Decode.errorToString decodeErr), Cmd.none )
 
 
-update : Msg -> Model -> ( Model, Cmd a )
-update msg model =
+update : Msg -> AppValidity -> ( AppValidity, Cmd a )
+update msg validity =
+    case validity of
+        AppValid model ->
+            updateValid msg model
+                |> Tuple.mapFirst AppValid
+
+        AppInvalid _ ->
+            ( validity, Cmd.none )
+
+
+
+-- TODO this type annotation should end in Cmd Msg
+
+
+updateValid : Msg -> Model -> ( Model, Cmd a )
+updateValid msg model =
     case msg of
         ReceiveMessage value ->
             case Json.Decode.decodeValue C.messageFromBackgroundScriptDecoder value of
@@ -194,8 +223,18 @@ update msg model =
             ( model, sendMessage exception )
 
 
-view : Model -> Html Msg
-view model =
+view : AppValidity -> Html Msg
+view validity =
+    case validity of
+        AppValid model ->
+            viewValid model
+
+        AppInvalid errStr ->
+            Html.text ("Cannot render page: " ++ errStr)
+
+
+viewValid : Model -> Html Msg
+viewValid model =
     case toResolvedModel model of
         Ok resolvedModel ->
             viewResolved resolvedModel
@@ -295,7 +334,7 @@ canCreateException rm =
     let
         waitDurationMillis =
             -- 10 seconds
-            10 * 1000 - 1
+            3 * 1000 - 1
 
         waitRemainMillis =
             waitDurationMillis - (Time.posixToMillis rm.currentTime - Time.posixToMillis rm.pageLoadTime)
