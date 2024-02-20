@@ -27,7 +27,7 @@ type AppValidity
 
 type alias Model =
     { common : C.Model
-    , nextUrl : Result String Url.Url
+    , nextUrl : Url.Url
     , pageLoadTime : Time.Posix
     , currentTime : Time.Posix
     , exceptionDurationInput : String
@@ -142,12 +142,15 @@ init flags =
         commonModel =
             Json.Decode.decodeValue (Json.Decode.field "common-model" C.modelDecoder) flags
     in
-    case commonModel of
-        Ok m ->
-            ( AppValid <| Model m nextUrl time time "2", Cmd.none )
+    case ( commonModel, nextUrl ) of
+        ( Ok m, Ok u ) ->
+            ( AppValid <| Model m u time time "2", Cmd.none )
 
-        Err decodeErr ->
+        ( Err decodeErr, _ ) ->
             ( AppInvalid (Json.Decode.errorToString decodeErr), Cmd.none )
+
+        ( _, Err nextUrlErr ) ->
+            ( AppInvalid nextUrlErr, Cmd.none )
 
 
 update : Msg -> AppValidity -> ( AppValidity, Cmd a )
@@ -174,16 +177,11 @@ updateValid msg model =
                     case message of
                         C.SendModel commonModel ->
                             ( { model | common = commonModel }
-                            , case model.nextUrl of
-                                Ok url ->
-                                    if C.checkIfIntercept commonModel url then
-                                        Cmd.none
+                            , if C.checkIfIntercept commonModel model.nextUrl then
+                                Cmd.none
 
-                                    else
-                                        Browser.Navigation.load (Url.toString url)
-
-                                Err _ ->
-                                    Cmd.none
+                              else
+                                Browser.Navigation.load (Url.toString model.nextUrl)
                             )
 
                 Err e ->
@@ -215,12 +213,7 @@ view validity =
     in
     case validity of
         AppValid model ->
-            case model.nextUrl of
-                Ok nextUrl ->
-                    viewValid model nextUrl
-
-                Err e ->
-                    showErr e
+            viewValid model
 
         AppInvalid e ->
             showErr e
@@ -238,8 +231,8 @@ subs =
 -- Helper functions
 
 
-viewValid : Model -> Url.Url -> Html Msg
-viewValid model nextUrl =
+viewValid : Model -> Html Msg
+viewValid model =
     let
         createExceptionButton =
             case canCreateException model of
@@ -251,7 +244,7 @@ viewValid model nextUrl =
                                 |> (+) (durationMins * 60 * 1000)
                                 |> Time.millisToPosix
                     in
-                    Html.button [ HtmlE.onClick (GotCreateException nextUrl expireTime) ] [ Html.text "Create exception" ]
+                    Html.button [ HtmlE.onClick (GotCreateException model.nextUrl expireTime) ] [ Html.text "Create exception" ]
 
                 WaitToCreate waitRemainMillis ->
                     Html.button [] [ Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis ++ " to create an exception" ]
@@ -263,7 +256,7 @@ viewValid model nextUrl =
         [ Html.p []
             [ Html.text
                 ("You were going to "
-                    ++ nextUrl.host
+                    ++ model.nextUrl.host
                 )
             ]
         , Html.ul []
