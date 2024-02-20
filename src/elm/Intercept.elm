@@ -3,7 +3,6 @@ port module Intercept exposing (..)
 import Background exposing (Msg(..))
 import Browser
 import Browser.Navigation
-import BrowserAction exposing (CommonModel)
 import Common as C
 import Debug
 import Html exposing (Html)
