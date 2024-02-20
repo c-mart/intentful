@@ -13,8 +13,13 @@ import Url.Parser exposing ((<?>))
 -- Primary types
 
 
+type AppValidity
+    = AppValid Model
+    | AppInvalid String
+
+
 type alias Model =
-    { common : CommonModel
+    { common : C.Model
     }
 
 
@@ -24,15 +29,6 @@ type Msg
 
 
 -- Helper types
-
-
-type CommonModel
-    = Valid C.Model
-    | Invalid String
-    | Waiting
-
-
-
 -- Ports
 
 
@@ -46,7 +42,7 @@ port sendMessage : Json.Encode.Value -> Cmd msg
 -- Primary functions
 
 
-main : Program Json.Encode.Value Model Msg
+main : Program Json.Encode.Value AppValidity Msg
 main =
     Browser.element
         { init = init
@@ -56,20 +52,40 @@ main =
         }
 
 
-init : Json.Decode.Value -> ( Model, Cmd Msg )
+init : Json.Decode.Value -> ( AppValidity, Cmd Msg )
 init flags =
-    ( { common = Waiting }, Cmd.none )
+    let
+        commonModel =
+            Json.Decode.decodeValue (Json.Decode.field "common-model" C.modelDecoder) flags
+    in
+    case commonModel of
+        Ok m ->
+            ( AppValid <| Model m, Cmd.none )
+
+        Err decodeErr ->
+            ( AppInvalid (Json.Decode.errorToString decodeErr), Cmd.none )
 
 
-update : Msg -> Model -> ( Model, Cmd a )
-update msg model =
+update : Msg -> AppValidity -> ( AppValidity, Cmd a )
+update msg validity =
+    case validity of
+        AppValid model ->
+            updateValid msg model
+                |> Tuple.mapFirst AppValid
+
+        AppInvalid _ ->
+            ( validity, Cmd.none )
+
+
+updateValid : Msg -> Model -> ( Model, Cmd a )
+updateValid msg model =
     case msg of
         ReceiveMessage value ->
             case Json.Decode.decodeValue C.messageFromBackgroundScriptDecoder value of
                 Ok message ->
                     case message of
                         C.SendModel commonModel ->
-                            ( { model | common = Valid commonModel }
+                            ( { model | common = commonModel }
                             , Cmd.none
                             )
 
@@ -78,8 +94,22 @@ update msg model =
                     ( model, Cmd.none )
 
 
-view : Model -> Html Msg
-view model =
+view : AppValidity -> Html Msg
+view validity =
+    let
+        showErr errStr =
+            Html.text ("Cannot render page: " ++ errStr)
+    in
+    case validity of
+        AppValid model ->
+            viewValid model
+
+        AppInvalid e ->
+            showErr e
+
+
+viewValid : Model -> Html Msg
+viewValid model =
     Html.text "Hello world"
 
 
@@ -91,13 +121,3 @@ subs =
 
 
 -- Helper functions
-
-
-decodeCommonModel : Json.Decode.Value -> CommonModel
-decodeCommonModel flags =
-    case Json.Decode.decodeValue C.modelDecoder flags of
-        Ok commonModel ->
-            Valid commonModel
-
-        Err e ->
-            Invalid (Json.Decode.errorToString e)
