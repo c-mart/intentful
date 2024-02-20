@@ -27,7 +27,7 @@ type AppValidity
 
 
 type alias Model =
-    { common : CommonModel
+    { common : C.Model
     , nextUrl : Result String Url.Url
     , pageLoadTime : Time.Posix
     , currentTime : Time.Posix
@@ -44,21 +44,6 @@ type Msg
 
 
 -- Helper types
-
-
-type CommonModel
-    = Valid C.Model
-    | Invalid String
-    | Waiting
-
-
-type alias ResolvedModel =
-    { common : C.Model
-    , nextUrl : Url.Url
-    , pageLoadTime : Time.Posix
-    , currentTime : Time.Posix
-    , exceptionDurationInput : String
-    }
 
 
 type ExceptionCreatability
@@ -160,7 +145,7 @@ init flags =
     in
     case commonModel of
         Ok m ->
-            ( AppValid <| Model (Valid m) nextUrl time time "2", Cmd.none )
+            ( AppValid <| Model m nextUrl time time "2", Cmd.none )
 
         Err decodeErr ->
             ( AppInvalid (Json.Decode.errorToString decodeErr), Cmd.none )
@@ -189,7 +174,7 @@ updateValid msg model =
                 Ok message ->
                     case message of
                         C.SendModel commonModel ->
-                            ( { model | common = Valid commonModel }
+                            ( { model | common = commonModel }
                             , case model.nextUrl of
                                 Ok url ->
                                     if C.checkIfIntercept commonModel url then
@@ -225,22 +210,21 @@ updateValid msg model =
 
 view : AppValidity -> Html Msg
 view validity =
+    let
+        showErr errStr =
+            Html.text ("Cannot render page: " ++ errStr)
+    in
     case validity of
         AppValid model ->
-            viewValid model
+            case model.nextUrl of
+                Ok nextUrl ->
+                    viewValid model nextUrl
 
-        AppInvalid errStr ->
-            Html.text ("Cannot render page: " ++ errStr)
+                Err e ->
+                    showErr e
 
-
-viewValid : Model -> Html Msg
-viewValid model =
-    case toResolvedModel model of
-        Ok resolvedModel ->
-            viewResolved resolvedModel
-
-        Err errStr ->
-            Html.text ("Cannot render page: " ++ errStr)
+        AppInvalid e ->
+            showErr e
 
 
 subs : Sub Msg
@@ -255,53 +239,20 @@ subs =
 -- Helper functions
 
 
-decodeCommonModel : Json.Decode.Value -> CommonModel
-decodeCommonModel flags =
-    case Json.Decode.decodeValue C.modelDecoder flags of
-        Ok commonModel ->
-            Valid commonModel
-
-        Err e ->
-            Invalid (Json.Decode.errorToString e)
-
-
-toResolvedModel : Model -> Result String ResolvedModel
-toResolvedModel model =
-    case ( model.common, model.nextUrl ) of
-        ( Valid commonModel, Ok url ) ->
-            Ok
-                (ResolvedModel
-                    commonModel
-                    url
-                    model.pageLoadTime
-                    model.currentTime
-                    model.exceptionDurationInput
-                )
-
-        ( Invalid invalidErr, _ ) ->
-            Err ("Cannot resolve because common model is invalid: " ++ invalidErr)
-
-        ( Waiting, _ ) ->
-            Err "Cannot resolve because waiting for common model"
-
-        ( _, Err urlErr ) ->
-            Err ("Cannot resolve because next URL is invalid: " ++ urlErr)
-
-
-viewResolved : ResolvedModel -> Html Msg
-viewResolved rm =
+viewValid : Model -> Url.Url -> Html Msg
+viewValid model nextUrl =
     let
         createExceptionButton =
-            case canCreateException rm of
+            case canCreateException model of
                 CanCreate durationMins ->
                     let
                         expireTime =
-                            rm.currentTime
+                            model.currentTime
                                 |> Time.posixToMillis
                                 |> (+) (durationMins * 60 * 1000)
                                 |> Time.millisToPosix
                     in
-                    Html.button [ HtmlE.onClick (GotCreateException rm.nextUrl expireTime) ] [ Html.text "Create exception" ]
+                    Html.button [ HtmlE.onClick (GotCreateException nextUrl expireTime) ] [ Html.text "Create exception" ]
 
                 WaitToCreate waitRemainMillis ->
                     Html.button [] [ Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis ++ " to create an exception" ]
@@ -313,14 +264,14 @@ viewResolved rm =
         [ Html.p []
             [ Html.text
                 ("You were going to "
-                    ++ rm.nextUrl.host
+                    ++ nextUrl.host
                 )
             ]
         , Html.ul []
             [ Html.li []
                 [ Html.input
                     [ HtmlE.onInput GotExceptionDurationInput
-                    , HtmlA.value rm.exceptionDurationInput
+                    , HtmlA.value model.exceptionDurationInput
                     ]
                     []
                 ]
@@ -329,21 +280,21 @@ viewResolved rm =
         ]
 
 
-canCreateException : ResolvedModel -> ExceptionCreatability
-canCreateException rm =
+canCreateException : Model -> ExceptionCreatability
+canCreateException model =
     let
         waitDurationMillis =
             -- 10 seconds
             3 * 1000 - 1
 
         waitRemainMillis =
-            waitDurationMillis - (Time.posixToMillis rm.currentTime - Time.posixToMillis rm.pageLoadTime)
+            waitDurationMillis - (Time.posixToMillis model.currentTime - Time.posixToMillis model.pageLoadTime)
     in
     if waitRemainMillis > 0 then
         WaitToCreate waitRemainMillis
 
     else
-        case String.toInt rm.exceptionDurationInput of
+        case String.toInt model.exceptionDurationInput of
             Just i ->
                 CanCreate i
 
