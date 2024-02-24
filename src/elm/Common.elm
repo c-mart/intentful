@@ -23,6 +23,12 @@ type alias Exception =
     }
 
 
+type DomainStatus
+    = Unknown
+    | Safe
+    | Unsafe
+
+
 type MessageFromBackgroundScript
     = SendModel Model
 
@@ -142,22 +148,41 @@ messageFromBackgroundScriptDecoder =
 -- Helper functions
 
 
-checkIfIntercept : Model -> Url.Url -> Bool
-checkIfIntercept model url =
+doesMatch : String -> String -> Bool
+doesMatch hostname domain =
+    String.endsWith domain hostname
+
+
+checkDomainStatus : Model -> Url.Url -> DomainStatus
+checkDomainStatus model url =
     let
         hostname =
             url.host
-
-        doesMatch : String -> Bool
-        doesMatch domain =
-            String.endsWith domain hostname
-
-        onRedirectList =
-            model.unsafeDomains
-                |> List.any doesMatch
-
-        onExceptionList =
-            List.map .domain model.exceptions
-                |> List.any doesMatch
     in
-    onRedirectList && not onExceptionList
+    if model.unsafeDomains |> List.any (doesMatch hostname) then
+        Unsafe
+
+    else if model.safeDomains |> List.any (doesMatch hostname) then
+        Safe
+
+    else
+        Unknown
+
+
+checkIfIntercept : Model -> Url.Url -> Bool
+checkIfIntercept model url =
+    case checkDomainStatus model url of
+        Unsafe ->
+            let
+                hostname =
+                    url.host
+
+                onExceptionList =
+                    List.map .domain model.exceptions
+                        |> List.any (doesMatch hostname)
+            in
+            not onExceptionList
+
+        _ ->
+            -- TODO later show a pop-up or something on unknown sites, asking user to categorize it. This logic may change.
+            False
