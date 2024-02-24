@@ -67,7 +67,7 @@ messageRoundTrip =
                             Expect.equal (Ok message.m)
                                 (message.m
                                     |> C.encodeMessageFromBackgroundScript
-                                    |> Json.Decode.decodeValue C.decodeMessageFromBackgroundScript
+                                    |> Json.Decode.decodeValue C.messageFromBackgroundScriptDecoder
                                 )
                 )
                 messagesFromBGScript
