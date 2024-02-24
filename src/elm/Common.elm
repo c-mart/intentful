@@ -12,6 +12,7 @@ import Url
 
 type alias Model =
     { unsafeDomains : List String
+    , safeDomains : List String
     , exceptions : List Exception
     }
 
@@ -40,6 +41,9 @@ encodeModel model =
     Json.Encode.object
         [ ( "unsafeDomains"
           , Json.Encode.list Json.Encode.string model.unsafeDomains
+          )
+        , ( "safeDomains"
+          , Json.Encode.list Json.Encode.string model.safeDomains
           )
         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
         ]
@@ -82,8 +86,11 @@ encodeMessageFromInterceptPage message =
 
 modelDecoder : Json.Decode.Decoder Model
 modelDecoder =
-    Json.Decode.map2 Model
+    Json.Decode.map3 Model
         (Json.Decode.field "unsafeDomains"
+            (Json.Decode.list Json.Decode.string)
+        )
+        (Json.Decode.field "safeDomains"
             (Json.Decode.list Json.Decode.string)
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))

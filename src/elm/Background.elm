@@ -84,6 +84,8 @@ init flags =
                     { unsafeDomains =
                         [ "weather.gov"
                         ]
+                    , safeDomains =
+                        []
                     , exceptions = []
                     }
     in
