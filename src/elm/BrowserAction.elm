@@ -6,6 +6,7 @@ import Common as C
 import Html exposing (Html)
 import Json.Decode
 import Json.Encode
+import Url
 import Url.Parser exposing ((<?>))
 
 
@@ -20,6 +21,7 @@ type AppValidity
 
 type alias Model =
     { common : C.Model
+    , currentTabUrl : Url.Url
     }
 
 
@@ -57,13 +59,26 @@ init flags =
     let
         commonModel =
             Json.Decode.decodeValue (Json.Decode.field "common-model" C.modelDecoder) flags
-    in
-    case commonModel of
-        Ok m ->
-            ( AppValid <| Model m, Cmd.none )
 
-        Err decodeErr ->
+        currentTabUrl =
+            Json.Decode.decodeValue
+                (Json.Decode.field "currentTabUrl" Json.Decode.string
+                    |> Json.Decode.map Url.fromString
+                )
+                flags
+    in
+    case ( commonModel, currentTabUrl ) of
+        ( Ok m, Ok (Just u) ) ->
+            ( AppValid <| Model m u, Cmd.none )
+
+        ( Err decodeErr, _ ) ->
             ( AppInvalid (Json.Decode.errorToString decodeErr), Cmd.none )
+
+        ( _, Err decodeErr ) ->
+            ( AppInvalid (Json.Decode.errorToString decodeErr), Cmd.none )
+
+        ( _, Ok Nothing ) ->
+            ( AppInvalid "could not parse current URL", Cmd.none )
 
 
 update : Msg -> AppValidity -> ( AppValidity, Cmd a )
@@ -110,7 +125,7 @@ view validity =
 
 viewValid : Model -> Html Msg
 viewValid model =
-    Html.text "Hello world"
+    Html.text ("Current URL is " ++ Url.toString model.currentTabUrl)
 
 
 subs : Sub Msg
