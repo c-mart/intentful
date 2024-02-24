@@ -81,7 +81,7 @@ init flags =
             storedModelResult
                 |> Result.withDefault
                     -- Empty model because could not decode local storage
-                    { domainsToRedirect =
+                    { unsafeDomains =
                         [ "weather.gov"
                         ]
                     , exceptions = []

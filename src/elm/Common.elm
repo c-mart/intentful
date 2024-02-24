@@ -11,7 +11,7 @@ import Url
 
 
 type alias Model =
-    { domainsToRedirect : List String
+    { unsafeDomains : List String
     , exceptions : List Exception
     }
 
@@ -38,8 +38,8 @@ type MessageFromInterceptPage
 encodeModel : Model -> Json.Encode.Value
 encodeModel model =
     Json.Encode.object
-        [ ( "domainsToRedirect"
-          , Json.Encode.list Json.Encode.string model.domainsToRedirect
+        [ ( "unsafeDomains"
+          , Json.Encode.list Json.Encode.string model.unsafeDomains
           )
         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
         ]
@@ -83,7 +83,7 @@ encodeMessageFromInterceptPage message =
 modelDecoder : Json.Decode.Decoder Model
 modelDecoder =
     Json.Decode.map2 Model
-        (Json.Decode.field "domainsToRedirect"
+        (Json.Decode.field "unsafeDomains"
             (Json.Decode.list Json.Decode.string)
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
@@ -146,7 +146,7 @@ checkIfIntercept model url =
             String.endsWith domain hostname
 
         onRedirectList =
-            model.domainsToRedirect
+            model.unsafeDomains
                 |> List.any doesMatch
 
         onExceptionList =
