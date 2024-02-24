@@ -9,7 +9,7 @@ import Time
 
 testModel : C.Model
 testModel =
-    C.Model [ "weather.gov" ] [ testException ]
+    C.Model [ "weather.gov" ] [] [ testException ]
 
 
 testException : C.Exception
