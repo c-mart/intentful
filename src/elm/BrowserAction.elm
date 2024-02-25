@@ -138,7 +138,17 @@ view validity =
 
 viewValid : Model -> Html Msg
 viewValid model =
-    Html.text ("Current URL is " ++ Url.toString model.currentTabUrl)
+    -- TODO allow user to change status of current domain
+    Html.div []
+        [ Html.text
+            ("Current URL is "
+                ++ Url.toString model.currentTabUrl
+            )
+        , Html.text
+            ("This site is "
+                ++ Debug.toString (C.checkDomainStatus model.common model.currentTabUrl)
+            )
+        ]
 
 
 subs : Sub Msg
