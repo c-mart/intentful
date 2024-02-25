@@ -4,6 +4,7 @@ import Background exposing (Msg(..))
 import Browser
 import Common as C
 import Html exposing (Html)
+import Html.Events as HtmlE
 import Json.Decode
 import Json.Encode
 import Url
@@ -28,6 +29,7 @@ type alias Model =
 type Msg
     = ReceiveMessage Json.Encode.Value
     | ReceiveCurrentTabUrl String
+    | GotSetDomainStatus C.DomainStatus
 
 
 
@@ -121,6 +123,13 @@ updateValid msg model =
                     -- TODO maybe model invalid URL, or debug log, or something
                     ( model, Cmd.none )
 
+        GotSetDomainStatus status ->
+            let
+                message =
+                    C.encodeMessageToBackgroundScript (C.SetDomainStatus model.currentTabUrl.host status)
+            in
+            ( model, sendMessage message )
+
 
 view : AppValidity -> Html Msg
 view validity =
@@ -148,7 +157,37 @@ viewValid model =
             ("This site is "
                 ++ Debug.toString (C.checkDomainStatus model.common model.currentTabUrl)
             )
+        , renderSetStatusButtons model
         ]
+
+
+renderSetStatusButtons : Model -> Html Msg
+renderSetStatusButtons model =
+    let
+        options =
+            case C.checkDomainStatus model.common model.currentTabUrl of
+                C.Unknown ->
+                    [ ( C.Safe, "Safe" )
+                    , ( C.Unsafe, "Unsafe" )
+                    ]
+
+                C.Safe ->
+                    [ ( C.Unsafe, "Unsafe" )
+                    ]
+
+                C.Unsafe ->
+                    -- TODO make this harder to select, it decreases safety
+                    [ ( C.Safe, "Safe" )
+                    ]
+
+        renderButton option =
+            Html.button
+                [ HtmlE.onClick (GotSetDomainStatus (Tuple.first option)) ]
+                [ Html.text (Tuple.second option) ]
+    in
+    Html.div
+        []
+        (List.map renderButton options)
 
 
 subs : Sub Msg
