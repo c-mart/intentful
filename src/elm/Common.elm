@@ -38,6 +38,10 @@ type MessageFromInterceptPage
     | NewException Exception
 
 
+type MessageFromBrowserAction
+    = SetDomainStatus String DomainStatus
+
+
 
 -- Encoders
 
@@ -109,6 +113,27 @@ exceptionDecoder =
         (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
 
 
+domainStatusDecoder : Json.Decode.Decoder DomainStatus
+domainStatusDecoder =
+    let
+        toStatus statusStr =
+            case statusStr of
+                "unknown" ->
+                    Json.Decode.succeed Unknown
+
+                "safe" ->
+                    Json.Decode.succeed Safe
+
+                "unsafe" ->
+                    Json.Decode.succeed Unsafe
+
+                _ ->
+                    Json.Decode.fail "unrecognized domain status"
+    in
+    Json.Decode.andThen toStatus
+        Json.Decode.string
+
+
 messageFromInterceptPageDecoder : Json.Decode.Decoder MessageFromInterceptPage
 messageFromInterceptPageDecoder =
     let
@@ -120,6 +145,23 @@ messageFromInterceptPageDecoder =
                 "new-exception" ->
                     Json.Decode.map NewException <|
                         Json.Decode.field "exception" exceptionDecoder
+
+                _ ->
+                    Json.Decode.fail "Unrecognized message tag"
+    in
+    Json.Decode.field "tag" Json.Decode.string
+        |> Json.Decode.andThen decode
+
+
+messageFromBrowserActionDecoder : Json.Decode.Decoder MessageFromBrowserAction
+messageFromBrowserActionDecoder =
+    let
+        decode tag =
+            case tag of
+                "set-domain-status" ->
+                    Json.Decode.map2 SetDomainStatus
+                        (Json.Decode.field "domain" Json.Decode.string)
+                        (Json.Decode.field "status" domainStatusDecoder)
 
                 _ ->
                     Json.Decode.fail "Unrecognized message tag"
