@@ -4,6 +4,7 @@ import Common as C
 import Debug
 import Json.Decode
 import Json.Encode
+import Set
 import Task
 import Time
 import Url
@@ -82,10 +83,11 @@ init flags =
                 |> Result.withDefault
                     -- Empty model because could not decode local storage
                     { unsafeDomains =
-                        [ "weather.gov"
-                        ]
+                        Set.fromList
+                            [ "weather.gov"
+                            ]
                     , safeDomains =
-                        []
+                        Set.empty
                     , exceptions = []
                     }
     in
@@ -197,23 +199,25 @@ setDomainStatus model domain status =
         C.Unknown ->
             { model
                 | unsafeDomains =
-                    List.filter (\d -> d /= domain) model.unsafeDomains
+                    Set.remove domain model.unsafeDomains
                 , safeDomains =
-                    List.filter (\d -> d /= domain) model.safeDomains
+                    Set.remove domain model.safeDomains
             }
 
         C.Safe ->
             { model
                 | unsafeDomains =
-                    List.filter (\d -> d /= domain) model.unsafeDomains
-                , safeDomains = domain :: model.safeDomains
+                    Set.remove domain model.unsafeDomains
+                , safeDomains =
+                    Set.insert domain model.safeDomains
             }
 
         C.Unsafe ->
             { model
-                | unsafeDomains = domain :: model.unsafeDomains
+                | unsafeDomains =
+                    Set.insert domain model.unsafeDomains
                 , safeDomains =
-                    List.filter (\d -> d /= domain) model.safeDomains
+                    Set.remove domain model.safeDomains
             }
 
 

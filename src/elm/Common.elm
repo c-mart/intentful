@@ -2,6 +2,7 @@ module Common exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Set
 import Time
 import Url
 
@@ -11,9 +12,8 @@ import Url
 
 
 type alias Model =
-    -- TODO these should be sets, not lists
-    { unsafeDomains : List String
-    , safeDomains : List String
+    { unsafeDomains : Set.Set String
+    , safeDomains : Set.Set String
     , exceptions : List Exception
     }
 
@@ -48,10 +48,14 @@ encodeModel : Model -> Json.Encode.Value
 encodeModel model =
     Json.Encode.object
         [ ( "unsafeDomains"
-          , Json.Encode.list Json.Encode.string model.unsafeDomains
+          , Json.Encode.list
+                Json.Encode.string
+                (Set.toList model.unsafeDomains)
           )
         , ( "safeDomains"
-          , Json.Encode.list Json.Encode.string model.safeDomains
+          , Json.Encode.list
+                Json.Encode.string
+                (Set.toList model.safeDomains)
           )
         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
         ]
@@ -117,10 +121,14 @@ modelDecoder : Json.Decode.Decoder Model
 modelDecoder =
     Json.Decode.map3 Model
         (Json.Decode.field "unsafeDomains"
-            (Json.Decode.list Json.Decode.string)
+            (Json.Decode.list Json.Decode.string
+                |> Json.Decode.map Set.fromList
+            )
         )
         (Json.Decode.field "safeDomains"
-            (Json.Decode.list Json.Decode.string)
+            (Json.Decode.list Json.Decode.string
+                |> Json.Decode.map Set.fromList
+            )
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
 
@@ -208,10 +216,18 @@ checkDomainStatus model url =
         hostname =
             url.host
     in
-    if model.unsafeDomains |> List.any (doesMatch hostname) then
+    if
+        model.unsafeDomains
+            |> Set.toList
+            |> List.any (doesMatch hostname)
+    then
         Unsafe
 
-    else if model.safeDomains |> List.any (doesMatch hostname) then
+    else if
+        model.safeDomains
+            |> Set.toList
+            |> List.any (doesMatch hostname)
+    then
         Safe
 
     else
