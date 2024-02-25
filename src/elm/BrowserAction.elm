@@ -27,6 +27,7 @@ type alias Model =
 
 type Msg
     = ReceiveMessage Json.Encode.Value
+    | ReceiveCurrentTabUrl String
 
 
 
@@ -35,6 +36,9 @@ type Msg
 
 
 port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg
+
+
+port receiveCurrentTabUrl : (String -> msg) -> Sub msg
 
 
 port sendMessage : Json.Encode.Value -> Cmd msg
@@ -108,6 +112,15 @@ updateValid msg model =
                     -- TODO something with this error
                     ( model, Cmd.none )
 
+        ReceiveCurrentTabUrl urlStr ->
+            case Url.fromString urlStr of
+                Just url ->
+                    ( { model | currentTabUrl = url }, Cmd.none )
+
+                Nothing ->
+                    -- TODO maybe model invalid URL, or debug log, or something
+                    ( model, Cmd.none )
+
 
 view : AppValidity -> Html Msg
 view validity =
@@ -131,7 +144,9 @@ viewValid model =
 subs : Sub Msg
 subs =
     Sub.batch
-        [ receiveMessage ReceiveMessage ]
+        [ receiveMessage ReceiveMessage
+        , receiveCurrentTabUrl ReceiveCurrentTabUrl
+        ]
 
 
 
