@@ -132,7 +132,7 @@ innerUpdate msg model =
     case msg of
         GotMessage value ->
             -- TODO this also needs to receive messages from browser action.
-            case Json.Decode.decodeValue C.messageFromInterceptPageDecoder value of
+            case Json.Decode.decodeValue C.messageToBackgroundScriptDecoder value of
                 Ok message ->
                     case message of
                         C.RequestModel ->
@@ -140,6 +140,9 @@ innerUpdate msg model =
 
                         C.NewException exception ->
                             ( { model | exceptions = exception :: model.exceptions }, Cmd.none )
+
+                        C.SetDomainStatus domain status ->
+                            ( setDomainStatus model domain status, Cmd.none )
 
                 Err e ->
                     ( model
@@ -186,6 +189,32 @@ innerUpdate msg model =
                     ( model
                     , logJsonError "Could not decode tabs" e
                     )
+
+
+setDomainStatus : C.Model -> String -> C.DomainStatus -> C.Model
+setDomainStatus model domain status =
+    case status of
+        C.Unknown ->
+            { model
+                | unsafeDomains =
+                    List.filter (\d -> d /= domain) model.unsafeDomains
+                , safeDomains =
+                    List.filter (\d -> d /= domain) model.safeDomains
+            }
+
+        C.Safe ->
+            { model
+                | unsafeDomains =
+                    List.filter (\d -> d /= domain) model.unsafeDomains
+                , safeDomains = domain :: model.safeDomains
+            }
+
+        C.Unsafe ->
+            { model
+                | unsafeDomains = domain :: model.unsafeDomains
+                , safeDomains =
+                    List.filter (\d -> d /= domain) model.safeDomains
+            }
 
 
 logJsonError : String -> Json.Decode.Error -> Cmd msg

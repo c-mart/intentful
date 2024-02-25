@@ -11,6 +11,7 @@ import Url
 
 
 type alias Model =
+    -- TODO these should be sets, not lists
     { unsafeDomains : List String
     , safeDomains : List String
     , exceptions : List Exception
@@ -33,13 +34,10 @@ type MessageFromBackgroundScript
     = SendModel Model
 
 
-type MessageFromInterceptPage
+type MessageToBackgroundScript
     = RequestModel
     | NewException Exception
-
-
-type MessageFromBrowserAction
-    = SetDomainStatus String DomainStatus
+    | SetDomainStatus String DomainStatus
 
 
 
@@ -67,6 +65,20 @@ encodeException exception =
         ]
 
 
+encodeDomainStatus : DomainStatus -> Json.Encode.Value
+encodeDomainStatus status =
+    Json.Encode.string <|
+        case status of
+            Unknown ->
+                "unknown"
+
+            Safe ->
+                "safe"
+
+            Unsafe ->
+                "unsafe"
+
+
 encodeMessageFromBackgroundScript : MessageFromBackgroundScript -> Json.Encode.Value
 encodeMessageFromBackgroundScript message =
     case message of
@@ -77,8 +89,8 @@ encodeMessageFromBackgroundScript message =
                 ]
 
 
-encodeMessageFromInterceptPage : MessageFromInterceptPage -> Json.Encode.Value
-encodeMessageFromInterceptPage message =
+encodeMessageToBackgroundScript : MessageToBackgroundScript -> Json.Encode.Value
+encodeMessageToBackgroundScript message =
     case message of
         RequestModel ->
             Json.Encode.object [ ( "tag", Json.Encode.string "request-model" ) ]
@@ -87,6 +99,13 @@ encodeMessageFromInterceptPage message =
             Json.Encode.object
                 [ ( "tag", Json.Encode.string "new-exception" )
                 , ( "exception", encodeException exception )
+                ]
+
+        SetDomainStatus domain status ->
+            Json.Encode.object
+                [ ( "tag", Json.Encode.string "set-domain-status" )
+                , ( "domain", Json.Encode.string domain )
+                , ( "status", encodeDomainStatus status )
                 ]
 
 
@@ -134,8 +153,8 @@ domainStatusDecoder =
         Json.Decode.string
 
 
-messageFromInterceptPageDecoder : Json.Decode.Decoder MessageFromInterceptPage
-messageFromInterceptPageDecoder =
+messageToBackgroundScriptDecoder : Json.Decode.Decoder MessageToBackgroundScript
+messageToBackgroundScriptDecoder =
     let
         decode tag =
             case tag of
@@ -146,18 +165,6 @@ messageFromInterceptPageDecoder =
                     Json.Decode.map NewException <|
                         Json.Decode.field "exception" exceptionDecoder
 
-                _ ->
-                    Json.Decode.fail "Unrecognized message tag"
-    in
-    Json.Decode.field "tag" Json.Decode.string
-        |> Json.Decode.andThen decode
-
-
-messageFromBrowserActionDecoder : Json.Decode.Decoder MessageFromBrowserAction
-messageFromBrowserActionDecoder =
-    let
-        decode tag =
-            case tag of
                 "set-domain-status" ->
                     Json.Decode.map2 SetDomainStatus
                         (Json.Decode.field "domain" Json.Decode.string)

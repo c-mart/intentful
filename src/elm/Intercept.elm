@@ -197,7 +197,7 @@ updateValid msg model =
         GotCreateException url endTime ->
             let
                 exception =
-                    C.encodeMessageFromInterceptPage
+                    C.encodeMessageToBackgroundScript
                         (C.NewException <|
                             C.Exception url.host endTime
                         )
