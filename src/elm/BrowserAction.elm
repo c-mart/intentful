@@ -147,7 +147,6 @@ view validity =
 
 viewValid : Model -> Html Msg
 viewValid model =
-    -- TODO allow user to change status of current domain
     Html.div []
         [ Html.text
             ("Current URL is "
