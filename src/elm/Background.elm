@@ -139,7 +139,7 @@ innerUpdate msg model =
                             ( { model | exceptions = exception :: model.exceptions }, Cmd.none )
 
                         C.SetDomainStatus domain status ->
-                            ( setDomainStatus model domain status, Cmd.none )
+                            setDomainStatus model domain status
 
                 Err e ->
                     ( model
@@ -190,32 +190,42 @@ innerUpdate msg model =
                     )
 
 
-setDomainStatus : C.Model -> String -> C.DomainStatus -> C.Model
+setDomainStatus : C.Model -> String -> C.DomainStatus -> ( C.Model, Cmd Msg )
 setDomainStatus model domain status =
     case status of
         C.Unknown ->
-            { model
+            ( { model
                 | unsafeDomains =
                     Set.remove domain model.unsafeDomains
                 , safeDomains =
                     Set.remove domain model.safeDomains
-            }
+              }
+            , Cmd.none
+            )
 
         C.Safe ->
-            { model
+            ( { model
                 | unsafeDomains =
                     Set.remove domain model.unsafeDomains
                 , safeDomains =
                     Set.insert domain model.safeDomains
-            }
+              }
+            , Cmd.none
+            )
 
         C.Unsafe ->
-            { model
-                | unsafeDomains =
-                    Set.insert domain model.unsafeDomains
-                , safeDomains =
-                    Set.remove domain model.safeDomains
-            }
+            let
+                newModel =
+                    { model
+                        | unsafeDomains =
+                            Set.insert domain model.unsafeDomains
+                        , safeDomains =
+                            Set.remove domain model.safeDomains
+                    }
+            in
+            ( newModel
+            , List.map (processTab newModel) newModel.tabs |> Cmd.batch
+            )
 
 
 logJsonError : String -> Json.Decode.Error -> Cmd msg
