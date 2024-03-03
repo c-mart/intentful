@@ -22,12 +22,6 @@ type Msg
     | GotAlarm Json.Encode.Value
 
 
-type alias Tab =
-    { id : Int
-    , url : String
-    }
-
-
 
 -- Ports
 
@@ -82,7 +76,8 @@ init flags =
             storedModelResult
                 |> Result.withDefault
                     -- Empty model because could not decode local storage
-                    { unsafeDomains =
+                    { tabs = []
+                    , unsafeDomains =
                         Set.fromList
                             [ "weather.gov"
                             ]
@@ -154,7 +149,7 @@ innerUpdate msg model =
         GotUrlChange urlChangeJson ->
             case decodeUrlChange urlChangeJson of
                 Ok tab ->
-                    ( model, processTab model tab )
+                    ( modelUpdateTab model tab, processTab model tab )
 
                 Err e ->
                     ( model
@@ -185,7 +180,9 @@ innerUpdate msg model =
         GotTabs tabsJson ->
             case decodeTabs tabsJson of
                 Ok tabs ->
-                    ( model, Cmd.batch <| List.map (processTab model) tabs )
+                    ( { model | tabs = tabs }
+                    , Cmd.batch <| List.map (processTab model) tabs
+                    )
 
                 Err e ->
                     ( model
@@ -230,8 +227,18 @@ logJsonError description e =
     consoleLog eStr
 
 
-processTab : C.Model -> Tab -> Cmd msg
+modelUpdateTab : C.Model -> C.Tab -> C.Model
+modelUpdateTab model newTab =
+    let
+        otherTabs =
+            model.tabs |> List.filter (\t -> t.id /= newTab.id)
+    in
+    { model | tabs = newTab :: otherTabs }
+
+
+processTab : C.Model -> C.Tab -> Cmd msg
 processTab model tab =
+    -- TODO rename this to tabIssueRedirect, or something
     case Url.fromString tab.url of
         Just url ->
             if C.checkIfIntercept model url then
@@ -258,18 +265,18 @@ encodeRedirect tabId url =
         ]
 
 
-decodeUrlChange : Json.Decode.Value -> Result Json.Decode.Error Tab
+decodeUrlChange : Json.Decode.Value -> Result Json.Decode.Error C.Tab
 decodeUrlChange urlChangeJson =
     Json.Decode.decodeValue tabDecoder urlChangeJson
 
 
-decodeTabs : Json.Decode.Value -> Result Json.Decode.Error (List Tab)
+decodeTabs : Json.Decode.Value -> Result Json.Decode.Error (List C.Tab)
 decodeTabs tabsJson =
     Json.Decode.decodeValue (Json.Decode.list tabDecoder) tabsJson
 
 
-tabDecoder : Json.Decode.Decoder Tab
+tabDecoder : Json.Decode.Decoder C.Tab
 tabDecoder =
-    Json.Decode.map2 Tab
+    Json.Decode.map2 C.Tab
         (Json.Decode.field "id" Json.Decode.int)
         (Json.Decode.field "url" Json.Decode.string)

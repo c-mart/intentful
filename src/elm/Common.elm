@@ -12,9 +12,16 @@ import Url
 
 
 type alias Model =
-    { unsafeDomains : Set.Set String
+    { tabs : List Tab
+    , unsafeDomains : Set.Set String
     , safeDomains : Set.Set String
     , exceptions : List Exception
+    }
+
+
+type alias Tab =
+    { id : Int
+    , url : String
     }
 
 
@@ -47,7 +54,8 @@ type MessageToBackgroundScript
 encodeModel : Model -> Json.Encode.Value
 encodeModel model =
     Json.Encode.object
-        [ ( "unsafeDomains"
+        [ ( "tabs", Json.Encode.list encodeTab model.tabs )
+        , ( "unsafeDomains"
           , Json.Encode.list
                 Json.Encode.string
                 (Set.toList model.unsafeDomains)
@@ -58,6 +66,14 @@ encodeModel model =
                 (Set.toList model.safeDomains)
           )
         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
+        ]
+
+
+encodeTab : Tab -> Json.Encode.Value
+encodeTab tab =
+    Json.Encode.object
+        [ ( "id", Json.Encode.int tab.id )
+        , ( "url", Json.Encode.string tab.url )
         ]
 
 
@@ -119,7 +135,8 @@ encodeMessageToBackgroundScript message =
 
 modelDecoder : Json.Decode.Decoder Model
 modelDecoder =
-    Json.Decode.map3 Model
+    Json.Decode.map4 Model
+        (Json.Decode.field "tabs" (Json.Decode.list tabDecoder))
         (Json.Decode.field "unsafeDomains"
             (Json.Decode.list Json.Decode.string
                 |> Json.Decode.map Set.fromList
@@ -131,6 +148,13 @@ modelDecoder =
             )
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
+
+
+tabDecoder : Json.Decode.Decoder Tab
+tabDecoder =
+    Json.Decode.map2 Tab
+        (Json.Decode.field "id" Json.Decode.int)
+        (Json.Decode.field "url" Json.Decode.string)
 
 
 exceptionDecoder : Json.Decode.Decoder Exception

@@ -10,7 +10,7 @@ import Time
 
 testModel : C.Model
 testModel =
-    C.Model (Set.fromList [ "weather.gov" ]) Set.empty [ testException ]
+    C.Model [ { id = 123, url = "https://lobste.rs" } ] (Set.fromList [ "weather.gov" ]) Set.empty [ testException ]
 
 
 testException : C.Exception
