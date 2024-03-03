@@ -149,7 +149,11 @@ innerUpdate msg model =
         GotUrlChange urlChangeJson ->
             case decodeUrlChange urlChangeJson of
                 Ok tab ->
-                    ( modelUpdateTab model tab, processTab model tab )
+                    let
+                        newModel =
+                            modelUpdateTab model tab
+                    in
+                    ( newModel, processTab newModel tab )
 
                 Err e ->
                     ( model
@@ -248,6 +252,7 @@ modelUpdateTab model newTab =
 
 processTab : C.Model -> C.Tab -> Cmd msg
 processTab model tab =
+    -- TODO if this is always called for the whole model at once, maybe act on all tabs in the model, never for one at a time
     -- TODO rename this to tabIssueRedirect, or something
     case Url.fromString tab.url of
         Just url ->
