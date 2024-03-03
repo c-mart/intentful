@@ -138,8 +138,12 @@ innerUpdate msg model =
                         C.NewException exception ->
                             ( { model | exceptions = exception :: model.exceptions }, Cmd.none )
 
-                        C.SetDomainStatus domain status ->
-                            setDomainStatus model domain status
+                        C.SetDomainStatus hostname status ->
+                            let
+                                rDom =
+                                    C.getRegisteredDomain hostname
+                            in
+                            setDomainStatus model rDom status
 
                 Err e ->
                     ( model
