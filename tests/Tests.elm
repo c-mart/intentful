@@ -3,13 +3,14 @@ module Tests exposing (messageRoundTrip, modelRoundTrip)
 import Common as C
 import Expect
 import Json.Decode
+import Set
 import Test exposing (..)
 import Time
 
 
 testModel : C.Model
 testModel =
-    C.Model [ "weather.gov" ] [] [ testException ]
+    C.Model (Set.fromList [ "weather.gov" ]) Set.empty [ testException ]
 
 
 testException : C.Exception
@@ -55,8 +56,8 @@ messageRoundTrip =
                         \_ ->
                             Expect.equal (Ok message.m)
                                 (message.m
-                                    |> C.encodeMessageFromInterceptPage
-                                    |> Json.Decode.decodeValue C.messageFromInterceptPageDecoder
+                                    |> C.encodeMessageToBackgroundScript
+                                    |> Json.Decode.decodeValue C.messageToBackgroundScriptDecoder
                                 )
                 )
                 messagesFromInterceptPage
