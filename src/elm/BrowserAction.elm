@@ -149,8 +149,8 @@ viewValid : Model -> Html Msg
 viewValid model =
     Html.div []
         [ Html.text
-            ("Current URL is "
-                ++ Url.toString model.currentTabUrl
+            ("Current site is "
+                ++ (model.currentTabUrl.host |> C.getRegisteredDomain)
             )
         , Html.text
             ("This site is "
