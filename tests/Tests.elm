@@ -1,4 +1,4 @@
-module Tests exposing (messageRoundTrip, modelRoundTrip)
+module Tests exposing (messageRoundTrip, modelRoundTrip, registeredDomains)
 
 import Common as C
 import Expect
@@ -6,6 +6,33 @@ import Json.Decode
 import Set
 import Test exposing (..)
 import Time
+
+
+registeredDomainTestData =
+    [ ( "www.visitarizona.com", "visitarizona.com" )
+    , ( "foobar.bbc.co.uk", "bbc.co.uk" )
+    , ( "cmart.blog", "cmart.blog" )
+    , ( "package.elm-lang.org", "elm-lang.org" )
+    ]
+
+
+registeredDomains : Test
+registeredDomains =
+    let
+        toTest hostname registeredDomain =
+            test
+                ("Hostname " ++ hostname ++ " has registered domain " ++ registeredDomain)
+                (\_ ->
+                    Expect.equal (C.getRegisteredDomain hostname) registeredDomain
+                )
+    in
+    describe "Registered domain"
+        (List.map
+            (\( hostname, registeredDomain ) ->
+                toTest hostname registeredDomain
+            )
+            registeredDomainTestData
+        )
 
 
 testModel : C.Model

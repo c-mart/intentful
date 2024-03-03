@@ -2,6 +2,7 @@ module Common exposing (..)
 
 import Json.Decode
 import Json.Encode
+import PSL
 import Set
 import Time
 import Url
@@ -227,6 +228,44 @@ messageFromBackgroundScriptDecoder =
 
 
 -- Helper functions
+
+
+getRegisteredDomain : String -> String
+getRegisteredDomain hostname =
+    let
+        maybeSuffix =
+            PSL.list
+                |> List.filter (\suffix_ -> String.endsWith suffix_ hostname)
+                -- Return longest matching suffix? Not sure about this.
+                |> List.sortBy (\s -> 0 - String.length s)
+                |> List.head
+    in
+    case maybeSuffix of
+        Nothing ->
+            -- No match, just return the whole thing
+            hostname
+
+        Just suffix ->
+            let
+                -- This factoring is kind of garbage
+                suffixLength =
+                    String.length suffix
+
+                hostnameNoSuffix =
+                    String.dropRight
+                        -- Also drop the period preceding suffix
+                        (suffixLength + 1)
+                        hostname
+
+                labelPriorToSuffix =
+                    hostnameNoSuffix
+                        |> String.split "."
+                        |> List.reverse
+                        |> List.head
+                        -- This should be an impossible state
+                        |> Maybe.withDefault ""
+            in
+            labelPriorToSuffix ++ "." ++ suffix
 
 
 doesMatch : String -> String -> Bool
