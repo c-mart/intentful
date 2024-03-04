@@ -9,21 +9,21 @@ import Time
 
 
 registeredDomainTestData =
-    [ ( "www.visitarizona.com", "visitarizona.com" )
-    , ( "foobar.bbc.co.uk", "bbc.co.uk" )
-    , ( "cmart.blog", "cmart.blog" )
-    , ( "package.elm-lang.org", "elm-lang.org" )
+    [ ( "www.visitarizona.com", C.RegisteredDomain "visitarizona.com" )
+    , ( "foobar.bbc.co.uk", C.RegisteredDomain "bbc.co.uk" )
+    , ( "cmart.blog", C.RegisteredDomain "cmart.blog" )
+    , ( "package.elm-lang.org", C.RegisteredDomain "elm-lang.org" )
     ]
 
 
 registeredDomains : Test
 registeredDomains =
     let
-        toTest hostname registeredDomain =
+        toTest hostname (C.RegisteredDomain rDom) =
             test
-                ("Hostname " ++ hostname ++ " has registered domain " ++ registeredDomain)
+                ("Hostname " ++ hostname ++ " has registered domain " ++ rDom)
                 (\_ ->
-                    Expect.equal (C.hostnameToRegisteredDomain hostname) registeredDomain
+                    Expect.equal (hostname |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain) rDom
                 )
     in
     describe "Registered domain"
@@ -37,12 +37,12 @@ registeredDomains =
 
 testModel : C.Model
 testModel =
-    C.Model [ { id = 123, url = "https://lobste.rs" } ] (Set.fromList [ "weather.gov" ]) Set.empty [ testException ]
+    C.Model [ { id = 123, url = "https://lobste.rs" } ] [ "weather.gov" ] [] [ testException ]
 
 
 testException : C.Exception
 testException =
-    C.Exception "facebook.com" (Time.millisToPosix 1704223664)
+    C.Exception (C.RegisteredDomain "facebook.com") (Time.millisToPosix 1704223664)
 
 
 modelRoundTrip : Test
