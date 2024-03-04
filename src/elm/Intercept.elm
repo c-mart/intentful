@@ -153,7 +153,7 @@ init flags =
             ( AppInvalid nextUrlErr, Cmd.none )
 
 
-update : Msg -> AppValidity -> ( AppValidity, Cmd a )
+update : Msg -> AppValidity -> ( AppValidity, Cmd Msg )
 update msg validity =
     case validity of
         AppValid model ->
@@ -164,11 +164,7 @@ update msg validity =
             ( validity, Cmd.none )
 
 
-
--- TODO this type annotation should end in Cmd Msg
-
-
-updateValid : Msg -> Model -> ( Model, Cmd a )
+updateValid : Msg -> Model -> ( Model, Cmd Msg )
 updateValid msg model =
     case msg of
         ReceiveMessage value ->
