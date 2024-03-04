@@ -125,8 +125,11 @@ updateValid msg model =
 
         GotSetDomainStatus status ->
             let
+                rDom =
+                    C.hostnameToRegisteredDomain model.currentTabUrl.host
+
                 message =
-                    C.encodeMessageToBackgroundScript (C.SetDomainStatus model.currentTabUrl.host status)
+                    C.encodeMessageToBackgroundScript (C.SetDomainStatus rDom status)
             in
             ( model, sendMessage message )
 
@@ -150,7 +153,7 @@ viewValid model =
     Html.div []
         [ Html.text
             ("Current site is "
-                ++ (model.currentTabUrl.host |> C.hostnameToRegisteredDomain)
+                ++ (model.currentTabUrl.host |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain)
             )
         , Html.text
             ("This site is "

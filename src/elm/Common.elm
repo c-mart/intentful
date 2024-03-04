@@ -12,6 +12,15 @@ import Url
 -- Types
 
 
+type RegisteredDomain
+    = RegisteredDomain String
+
+
+unwrapRegisteredDomain : RegisteredDomain -> String
+unwrapRegisteredDomain (RegisteredDomain rDom) =
+    rDom
+
+
 type alias Model =
     { tabs : List Tab
     , unsafeDomains : Set.Set String
@@ -45,7 +54,7 @@ type MessageFromBackgroundScript
 type MessageToBackgroundScript
     = RequestModel
     | NewException Exception
-    | SetDomainStatus String DomainStatus
+    | SetDomainStatus RegisteredDomain DomainStatus
 
 
 
@@ -125,7 +134,7 @@ encodeMessageToBackgroundScript message =
         SetDomainStatus domain status ->
             Json.Encode.object
                 [ ( "tag", Json.Encode.string "set-domain-status" )
-                , ( "domain", Json.Encode.string domain )
+                , ( "domain", Json.Encode.string (unwrapRegisteredDomain domain) )
                 , ( "status", encodeDomainStatus status )
                 ]
 
@@ -200,7 +209,7 @@ messageToBackgroundScriptDecoder =
 
                 "set-domain-status" ->
                     Json.Decode.map2 SetDomainStatus
-                        (Json.Decode.field "domain" Json.Decode.string)
+                        (Json.Decode.field "domain" Json.Decode.string |> Json.Decode.map RegisteredDomain)
                         (Json.Decode.field "status" domainStatusDecoder)
 
                 _ ->
@@ -230,7 +239,7 @@ messageFromBackgroundScriptDecoder =
 -- Helper functions
 
 
-hostnameToRegisteredDomain : String -> String
+hostnameToRegisteredDomain : String -> RegisteredDomain
 hostnameToRegisteredDomain hostname =
     let
         maybeSuffix =
@@ -240,32 +249,33 @@ hostnameToRegisteredDomain hostname =
                 |> List.sortBy (\s -> 0 - String.length s)
                 |> List.head
     in
-    case maybeSuffix of
-        Nothing ->
-            -- No match, just return the whole thing
-            hostname
+    RegisteredDomain <|
+        case maybeSuffix of
+            Nothing ->
+                -- No match, just return the whole thing
+                hostname
 
-        Just suffix ->
-            let
-                -- This factoring is kind of garbage
-                suffixLength =
-                    String.length suffix
+            Just suffix ->
+                let
+                    -- This factoring is kind of garbage
+                    suffixLength =
+                        String.length suffix
 
-                hostnameNoSuffix =
-                    String.dropRight
-                        -- Also drop the period preceding suffix
-                        (suffixLength + 1)
-                        hostname
+                    hostnameNoSuffix =
+                        String.dropRight
+                            -- Also drop the period preceding suffix
+                            (suffixLength + 1)
+                            hostname
 
-                labelPriorToSuffix =
-                    hostnameNoSuffix
-                        |> String.split "."
-                        |> List.reverse
-                        |> List.head
-                        -- This should be an impossible state
-                        |> Maybe.withDefault ""
-            in
-            labelPriorToSuffix ++ "." ++ suffix
+                    labelPriorToSuffix =
+                        hostnameNoSuffix
+                            |> String.split "."
+                            |> List.reverse
+                            |> List.head
+                            -- This should be an impossible state
+                            |> Maybe.withDefault ""
+                in
+                labelPriorToSuffix ++ "." ++ suffix
 
 
 doesMatch : String -> String -> Bool

@@ -1,6 +1,6 @@
 port module Background exposing (..)
 
-import Common as C
+import Common as C exposing (RegisteredDomain)
 import Debug
 import Json.Decode
 import Json.Encode
@@ -138,11 +138,7 @@ innerUpdate msg model =
                         C.NewException exception ->
                             ( { model | exceptions = exception :: model.exceptions }, Cmd.none )
 
-                        C.SetDomainStatus hostname status ->
-                            let
-                                rDom =
-                                    C.hostnameToRegisteredDomain hostname
-                            in
+                        C.SetDomainStatus rDom status ->
                             setDomainStatus model rDom status
 
                 Err e ->
@@ -198,8 +194,8 @@ innerUpdate msg model =
                     )
 
 
-setDomainStatus : C.Model -> String -> C.DomainStatus -> ( C.Model, Cmd Msg )
-setDomainStatus model domain status =
+setDomainStatus : C.Model -> C.RegisteredDomain -> C.DomainStatus -> ( C.Model, Cmd Msg )
+setDomainStatus model (C.RegisteredDomain domain) status =
     case status of
         C.Unknown ->
             ( { model

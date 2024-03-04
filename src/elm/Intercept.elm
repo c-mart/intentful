@@ -256,7 +256,7 @@ viewValid model =
         [ Html.p []
             [ Html.text
                 ("You were going to "
-                    ++ C.hostnameToRegisteredDomain model.nextUrl.host
+                    ++ (model.nextUrl.host |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain)
                 )
             ]
         , Html.ul []
