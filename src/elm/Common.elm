@@ -23,10 +23,8 @@ unwrapRegisteredDomain (RegisteredDomain rDom) =
 
 type alias Model =
     { tabs : List Tab
-
-    -- TODO want to use named type for these, but values of a Set must be comparable.
-    , unsafeDomains : Set.Set String
-    , safeDomains : Set.Set String
+    , unsafeDomains : List String
+    , safeDomains : List String
     , exceptions : List Exception
     }
 
@@ -70,12 +68,12 @@ encodeModel model =
         , ( "unsafeDomains"
           , Json.Encode.list
                 Json.Encode.string
-                (Set.toList model.unsafeDomains)
+                model.unsafeDomains
           )
         , ( "safeDomains"
           , Json.Encode.list
                 Json.Encode.string
-                (Set.toList model.safeDomains)
+                model.safeDomains
           )
         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
         ]
@@ -150,14 +148,10 @@ modelDecoder =
     Json.Decode.map4 Model
         (Json.Decode.field "tabs" (Json.Decode.list tabDecoder))
         (Json.Decode.field "unsafeDomains"
-            (Json.Decode.list Json.Decode.string
-                |> Json.Decode.map Set.fromList
-            )
+            (Json.Decode.list Json.Decode.string)
         )
         (Json.Decode.field "safeDomains"
-            (Json.Decode.list Json.Decode.string
-                |> Json.Decode.map Set.fromList
-            )
+            (Json.Decode.list Json.Decode.string)
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
 
@@ -293,7 +287,6 @@ checkDomainStatus model url =
     in
     if
         model.unsafeDomains
-            |> Set.toList
             -- Ew, fix
             |> List.map RegisteredDomain
             |> List.any (doesMatch hostname)
@@ -302,7 +295,6 @@ checkDomainStatus model url =
 
     else if
         model.safeDomains
-            |> Set.toList
             -- Ew, fix
             |> List.map RegisteredDomain
             |> List.any (doesMatch hostname)

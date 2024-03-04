@@ -2,6 +2,7 @@ port module Background exposing (..)
 
 import Common as C exposing (RegisteredDomain)
 import Debug
+import Html exposing (a)
 import Json.Decode
 import Json.Encode
 import Set
@@ -78,11 +79,10 @@ init flags =
                     -- Empty model because could not decode local storage
                     { tabs = []
                     , unsafeDomains =
-                        Set.fromList
-                            [ "weather.gov"
-                            ]
+                        [ "weather.gov"
+                        ]
                     , safeDomains =
-                        Set.empty
+                        []
                     , exceptions = []
                     }
     in
@@ -196,13 +196,22 @@ innerUpdate msg model =
 
 setDomainStatus : C.Model -> C.RegisteredDomain -> C.DomainStatus -> ( C.Model, Cmd Msg )
 setDomainStatus model (C.RegisteredDomain domain) status =
+    let
+        insert : a -> List a -> List a
+        insert item list =
+            if List.member item list then
+                list
+
+            else
+                item :: list
+    in
     case status of
         C.Unknown ->
             ( { model
                 | unsafeDomains =
-                    Set.remove domain model.unsafeDomains
+                    List.filter (\d -> d /= domain) model.unsafeDomains
                 , safeDomains =
-                    Set.remove domain model.safeDomains
+                    List.filter (\d -> d /= domain) model.safeDomains
               }
             , Cmd.none
             )
@@ -210,9 +219,9 @@ setDomainStatus model (C.RegisteredDomain domain) status =
         C.Safe ->
             ( { model
                 | unsafeDomains =
-                    Set.remove domain model.unsafeDomains
+                    List.filter (\d -> d /= domain) model.unsafeDomains
                 , safeDomains =
-                    Set.insert domain model.safeDomains
+                    insert domain model.safeDomains
               }
             , Cmd.none
             )
@@ -222,9 +231,9 @@ setDomainStatus model (C.RegisteredDomain domain) status =
                 newModel =
                     { model
                         | unsafeDomains =
-                            Set.insert domain model.unsafeDomains
+                            insert domain model.unsafeDomains
                         , safeDomains =
-                            Set.remove domain model.safeDomains
+                            List.filter (\d -> d /= domain) model.safeDomains
                     }
             in
             ( newModel
