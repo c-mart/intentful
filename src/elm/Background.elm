@@ -128,7 +128,6 @@ innerUpdate : Msg -> C.Model -> ( C.Model, Cmd Msg )
 innerUpdate msg model =
     case msg of
         GotMessage value ->
-            -- TODO this also needs to receive messages from browser action.
             case Json.Decode.decodeValue C.messageToBackgroundScriptDecoder value of
                 Ok message ->
                     case message of
