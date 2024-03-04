@@ -42,7 +42,7 @@ testModel =
 
 testException : C.Exception
 testException =
-    C.Exception (C.RegisteredDomain "facebook.com") (Time.millisToPosix 1704223664)
+    C.Exception (C.Hostname "facebook.com") (Time.millisToPosix 1704223664)
 
 
 modelRoundTrip : Test

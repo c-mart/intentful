@@ -136,8 +136,8 @@ innerUpdate msg model =
                         C.NewException exception ->
                             ( { model | exceptions = exception :: model.exceptions }, Cmd.none )
 
-                        C.SetSiteStatus rDom status ->
-                            setSiteStatus model rDom status
+                        C.SetSiteStatus hostname status ->
+                            setSiteStatus model hostname status
 
                 Err e ->
                     ( model
@@ -192,8 +192,8 @@ innerUpdate msg model =
                     )
 
 
-setSiteStatus : C.Model -> C.RegisteredDomain -> C.SiteStatus -> ( C.Model, Cmd Msg )
-setSiteStatus model (C.RegisteredDomain domain) status =
+setSiteStatus : C.Model -> C.Hostname -> C.SiteStatus -> ( C.Model, Cmd Msg )
+setSiteStatus model (C.Hostname hostname) status =
     let
         insert : a -> List a -> List a
         insert item list =
@@ -207,9 +207,9 @@ setSiteStatus model (C.RegisteredDomain domain) status =
         C.Unknown ->
             ( { model
                 | unsafeSites =
-                    List.filter (\d -> d /= domain) model.unsafeSites
+                    List.filter (\d -> d /= hostname) model.unsafeSites
                 , safeSites =
-                    List.filter (\d -> d /= domain) model.safeSites
+                    List.filter (\d -> d /= hostname) model.safeSites
               }
             , Cmd.none
             )
@@ -217,9 +217,9 @@ setSiteStatus model (C.RegisteredDomain domain) status =
         C.Safe ->
             ( { model
                 | unsafeSites =
-                    List.filter (\d -> d /= domain) model.unsafeSites
+                    List.filter (\d -> d /= hostname) model.unsafeSites
                 , safeSites =
-                    insert domain model.safeSites
+                    insert hostname model.safeSites
               }
             , Cmd.none
             )
@@ -229,9 +229,9 @@ setSiteStatus model (C.RegisteredDomain domain) status =
                 newModel =
                     { model
                         | unsafeSites =
-                            insert domain model.unsafeSites
+                            insert hostname model.unsafeSites
                         , safeSites =
-                            List.filter (\d -> d /= domain) model.safeSites
+                            List.filter (\d -> d /= hostname) model.safeSites
                     }
             in
             ( newModel

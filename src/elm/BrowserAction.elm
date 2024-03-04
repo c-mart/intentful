@@ -128,8 +128,11 @@ updateValid msg model =
                 rDom =
                     C.hostnameToRegisteredDomain model.currentTabUrl.host
 
+                hostname =
+                    rDom |> C.unwrapRegisteredDomain |> C.Hostname
+
                 message =
-                    C.encodeMessageToBackgroundScript (C.SetSiteStatus rDom status)
+                    C.encodeMessageToBackgroundScript (C.SetSiteStatus hostname status)
             in
             ( model, sendMessage message )
 

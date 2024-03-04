@@ -72,6 +72,15 @@ unwrapRegisteredDomain (RegisteredDomain rDom) =
     rDom
 
 
+type Hostname
+    = Hostname String
+
+
+unwrapHostname : Hostname -> String
+unwrapHostname (Hostname h) =
+    h
+
+
 type alias Model =
     { tabs : List Tab
     , unsafeSites : List String
@@ -87,7 +96,7 @@ type alias Tab =
 
 
 type alias Exception =
-    { site : RegisteredDomain
+    { site : Hostname
     , endTime : Time.Posix
     }
 
@@ -105,7 +114,7 @@ type MessageFromBackgroundScript
 type MessageToBackgroundScript
     = RequestModel
     | NewException Exception
-    | SetSiteStatus RegisteredDomain SiteStatus
+    | SetSiteStatus Hostname SiteStatus
 
 
 
@@ -141,7 +150,7 @@ encodeTab tab =
 encodeException : Exception -> Json.Encode.Value
 encodeException exception =
     Json.Encode.object
-        [ ( "site", Json.Encode.string (unwrapRegisteredDomain exception.site) )
+        [ ( "site", Json.Encode.string (unwrapHostname exception.site) )
         , ( "endTime", Json.Encode.int <| Time.posixToMillis exception.endTime )
         ]
 
@@ -182,10 +191,10 @@ encodeMessageToBackgroundScript message =
                 , ( "exception", encodeException exception )
                 ]
 
-        SetSiteStatus domain status ->
+        SetSiteStatus hostname status ->
             Json.Encode.object
                 [ ( "tag", Json.Encode.string "set-site-status" )
-                , ( "site", Json.Encode.string (unwrapRegisteredDomain domain) )
+                , ( "site", Json.Encode.string (unwrapHostname hostname) )
                 , ( "status", encodeSiteStatus status )
                 ]
 
@@ -217,7 +226,7 @@ tabDecoder =
 exceptionDecoder : Json.Decode.Decoder Exception
 exceptionDecoder =
     Json.Decode.map2 Exception
-        (Json.Decode.field "site" Json.Decode.string |> Json.Decode.map RegisteredDomain)
+        (Json.Decode.field "site" Json.Decode.string |> Json.Decode.map Hostname)
         (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
 
 
@@ -256,7 +265,7 @@ messageToBackgroundScriptDecoder =
 
                 "set-site-status" ->
                     Json.Decode.map2 SetSiteStatus
-                        (Json.Decode.field "site" Json.Decode.string |> Json.Decode.map RegisteredDomain)
+                        (Json.Decode.field "site" Json.Decode.string |> Json.Decode.map Hostname)
                         (Json.Decode.field "status" siteStatusDecoder)
 
                 _ ->
@@ -325,30 +334,30 @@ hostnameToRegisteredDomain hostname =
                 labelPriorToSuffix ++ "." ++ suffix
 
 
-doesMatch : String -> RegisteredDomain -> Bool
-doesMatch hostname (RegisteredDomain rDom) =
-    String.endsWith rDom hostname
+hostnameIncludes : Hostname -> Hostname -> Bool
+hostnameIncludes (Hostname subHostname) (Hostname superHostname) =
+    String.endsWith superHostname subHostname
 
 
 checkSiteStatus : Model -> Url.Url -> SiteStatus
 checkSiteStatus model url =
     let
         hostname =
-            url.host
+            Hostname url.host
     in
     if
         model.unsafeSites
             -- Ew, fix
-            |> List.map RegisteredDomain
-            |> List.any (doesMatch hostname)
+            |> List.map Hostname
+            |> List.any (hostnameIncludes hostname)
     then
         Unsafe
 
     else if
         model.safeSites
             -- Ew, fix
-            |> List.map RegisteredDomain
-            |> List.any (doesMatch hostname)
+            |> List.map Hostname
+            |> List.any (hostnameIncludes hostname)
     then
         Safe
 
@@ -362,11 +371,11 @@ checkIfIntercept model url =
         Unsafe ->
             let
                 hostname =
-                    url.host
+                    Hostname url.host
 
                 onExceptionList =
                     List.map .site model.exceptions
-                        |> List.any (doesMatch hostname)
+                        |> List.any (hostnameIncludes hostname)
             in
             not onExceptionList
 
