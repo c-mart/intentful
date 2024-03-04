@@ -78,9 +78,9 @@ init flags =
                 |> Result.withDefault
                     -- Empty model because could not decode local storage
                     { tabs = []
-                    , unsafeDomains =
+                    , unsafeSites =
                         C.unsafeSitesForDevTesting
-                    , safeDomains =
+                    , safeSites =
                         []
                     , exceptions = []
                     }
@@ -136,8 +136,8 @@ innerUpdate msg model =
                         C.NewException exception ->
                             ( { model | exceptions = exception :: model.exceptions }, Cmd.none )
 
-                        C.SetDomainStatus rDom status ->
-                            setDomainStatus model rDom status
+                        C.SetSiteStatus rDom status ->
+                            setSiteStatus model rDom status
 
                 Err e ->
                     ( model
@@ -192,8 +192,8 @@ innerUpdate msg model =
                     )
 
 
-setDomainStatus : C.Model -> C.RegisteredDomain -> C.DomainStatus -> ( C.Model, Cmd Msg )
-setDomainStatus model (C.RegisteredDomain domain) status =
+setSiteStatus : C.Model -> C.RegisteredDomain -> C.SiteStatus -> ( C.Model, Cmd Msg )
+setSiteStatus model (C.RegisteredDomain domain) status =
     let
         insert : a -> List a -> List a
         insert item list =
@@ -206,20 +206,20 @@ setDomainStatus model (C.RegisteredDomain domain) status =
     case status of
         C.Unknown ->
             ( { model
-                | unsafeDomains =
-                    List.filter (\d -> d /= domain) model.unsafeDomains
-                , safeDomains =
-                    List.filter (\d -> d /= domain) model.safeDomains
+                | unsafeSites =
+                    List.filter (\d -> d /= domain) model.unsafeSites
+                , safeSites =
+                    List.filter (\d -> d /= domain) model.safeSites
               }
             , Cmd.none
             )
 
         C.Safe ->
             ( { model
-                | unsafeDomains =
-                    List.filter (\d -> d /= domain) model.unsafeDomains
-                , safeDomains =
-                    insert domain model.safeDomains
+                | unsafeSites =
+                    List.filter (\d -> d /= domain) model.unsafeSites
+                , safeSites =
+                    insert domain model.safeSites
               }
             , Cmd.none
             )
@@ -228,10 +228,10 @@ setDomainStatus model (C.RegisteredDomain domain) status =
             let
                 newModel =
                     { model
-                        | unsafeDomains =
-                            insert domain model.unsafeDomains
-                        , safeDomains =
-                            List.filter (\d -> d /= domain) model.safeDomains
+                        | unsafeSites =
+                            insert domain model.unsafeSites
+                        , safeSites =
+                            List.filter (\d -> d /= domain) model.safeSites
                     }
             in
             ( newModel

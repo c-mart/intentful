@@ -74,8 +74,8 @@ unwrapRegisteredDomain (RegisteredDomain rDom) =
 
 type alias Model =
     { tabs : List Tab
-    , unsafeDomains : List String
-    , safeDomains : List String
+    , unsafeSites : List String
+    , safeSites : List String
     , exceptions : List Exception
     }
 
@@ -87,12 +87,12 @@ type alias Tab =
 
 
 type alias Exception =
-    { domain : RegisteredDomain
+    { site : RegisteredDomain
     , endTime : Time.Posix
     }
 
 
-type DomainStatus
+type SiteStatus
     = Unknown
     | Safe
     | Unsafe
@@ -105,7 +105,7 @@ type MessageFromBackgroundScript
 type MessageToBackgroundScript
     = RequestModel
     | NewException Exception
-    | SetDomainStatus RegisteredDomain DomainStatus
+    | SetSiteStatus RegisteredDomain SiteStatus
 
 
 
@@ -116,15 +116,15 @@ encodeModel : Model -> Json.Encode.Value
 encodeModel model =
     Json.Encode.object
         [ ( "tabs", Json.Encode.list encodeTab model.tabs )
-        , ( "unsafeDomains"
+        , ( "unsafeSites"
           , Json.Encode.list
                 Json.Encode.string
-                model.unsafeDomains
+                model.unsafeSites
           )
-        , ( "safeDomains"
+        , ( "safeSites"
           , Json.Encode.list
                 Json.Encode.string
-                model.safeDomains
+                model.safeSites
           )
         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
         ]
@@ -141,13 +141,13 @@ encodeTab tab =
 encodeException : Exception -> Json.Encode.Value
 encodeException exception =
     Json.Encode.object
-        [ ( "domain", Json.Encode.string (unwrapRegisteredDomain exception.domain) )
+        [ ( "site", Json.Encode.string (unwrapRegisteredDomain exception.site) )
         , ( "endTime", Json.Encode.int <| Time.posixToMillis exception.endTime )
         ]
 
 
-encodeDomainStatus : DomainStatus -> Json.Encode.Value
-encodeDomainStatus status =
+encodeSiteStatus : SiteStatus -> Json.Encode.Value
+encodeSiteStatus status =
     Json.Encode.string <|
         case status of
             Unknown ->
@@ -182,11 +182,11 @@ encodeMessageToBackgroundScript message =
                 , ( "exception", encodeException exception )
                 ]
 
-        SetDomainStatus domain status ->
+        SetSiteStatus domain status ->
             Json.Encode.object
-                [ ( "tag", Json.Encode.string "set-domain-status" )
-                , ( "domain", Json.Encode.string (unwrapRegisteredDomain domain) )
-                , ( "status", encodeDomainStatus status )
+                [ ( "tag", Json.Encode.string "set-site-status" )
+                , ( "site", Json.Encode.string (unwrapRegisteredDomain domain) )
+                , ( "status", encodeSiteStatus status )
                 ]
 
 
@@ -198,10 +198,10 @@ modelDecoder : Json.Decode.Decoder Model
 modelDecoder =
     Json.Decode.map4 Model
         (Json.Decode.field "tabs" (Json.Decode.list tabDecoder))
-        (Json.Decode.field "unsafeDomains"
+        (Json.Decode.field "unsafeSites"
             (Json.Decode.list Json.Decode.string)
         )
-        (Json.Decode.field "safeDomains"
+        (Json.Decode.field "safeSites"
             (Json.Decode.list Json.Decode.string)
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
@@ -217,12 +217,12 @@ tabDecoder =
 exceptionDecoder : Json.Decode.Decoder Exception
 exceptionDecoder =
     Json.Decode.map2 Exception
-        (Json.Decode.field "domain" Json.Decode.string |> Json.Decode.map RegisteredDomain)
+        (Json.Decode.field "site" Json.Decode.string |> Json.Decode.map RegisteredDomain)
         (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
 
 
-domainStatusDecoder : Json.Decode.Decoder DomainStatus
-domainStatusDecoder =
+siteStatusDecoder : Json.Decode.Decoder SiteStatus
+siteStatusDecoder =
     let
         toStatus statusStr =
             case statusStr of
@@ -236,7 +236,7 @@ domainStatusDecoder =
                     Json.Decode.succeed Unsafe
 
                 _ ->
-                    Json.Decode.fail "unrecognized domain status"
+                    Json.Decode.fail "unrecognized site status"
     in
     Json.Decode.andThen toStatus
         Json.Decode.string
@@ -254,10 +254,10 @@ messageToBackgroundScriptDecoder =
                     Json.Decode.map NewException <|
                         Json.Decode.field "exception" exceptionDecoder
 
-                "set-domain-status" ->
-                    Json.Decode.map2 SetDomainStatus
-                        (Json.Decode.field "domain" Json.Decode.string |> Json.Decode.map RegisteredDomain)
-                        (Json.Decode.field "status" domainStatusDecoder)
+                "set-site-status" ->
+                    Json.Decode.map2 SetSiteStatus
+                        (Json.Decode.field "site" Json.Decode.string |> Json.Decode.map RegisteredDomain)
+                        (Json.Decode.field "status" siteStatusDecoder)
 
                 _ ->
                     Json.Decode.fail "Unrecognized message tag"
@@ -330,14 +330,14 @@ doesMatch hostname (RegisteredDomain rDom) =
     String.endsWith rDom hostname
 
 
-checkDomainStatus : Model -> Url.Url -> DomainStatus
-checkDomainStatus model url =
+checkSiteStatus : Model -> Url.Url -> SiteStatus
+checkSiteStatus model url =
     let
         hostname =
             url.host
     in
     if
-        model.unsafeDomains
+        model.unsafeSites
             -- Ew, fix
             |> List.map RegisteredDomain
             |> List.any (doesMatch hostname)
@@ -345,7 +345,7 @@ checkDomainStatus model url =
         Unsafe
 
     else if
-        model.safeDomains
+        model.safeSites
             -- Ew, fix
             |> List.map RegisteredDomain
             |> List.any (doesMatch hostname)
@@ -358,14 +358,14 @@ checkDomainStatus model url =
 
 checkIfIntercept : Model -> Url.Url -> Bool
 checkIfIntercept model url =
-    case checkDomainStatus model url of
+    case checkSiteStatus model url of
         Unsafe ->
             let
                 hostname =
                     url.host
 
                 onExceptionList =
-                    List.map .domain model.exceptions
+                    List.map .site model.exceptions
                         |> List.any (doesMatch hostname)
             in
             not onExceptionList
