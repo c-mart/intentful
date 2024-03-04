@@ -125,8 +125,11 @@ updateValid msg model =
 
         GotSetSiteStatus status ->
             let
+                -- For now, always set registered domain. Later, we'll allow user to choose scope of site.
                 rDom =
-                    C.hostnameToRegisteredDomain model.currentTabUrl.host
+                    model.currentTabUrl.host
+                        |> C.Hostname
+                        |> C.hostnameToRegisteredDomain
 
                 hostname =
                     rDom |> C.unwrapRegisteredDomain |> C.Hostname
@@ -156,7 +159,7 @@ viewValid model =
     Html.div []
         [ Html.text
             ("Current site is "
-                ++ (model.currentTabUrl.host |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain)
+                ++ (model.currentTabUrl.host |> C.Hostname |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain)
             )
         , Html.text
             ("This site is "

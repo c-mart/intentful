@@ -295,8 +295,8 @@ messageFromBackgroundScriptDecoder =
 -- Helper functions
 
 
-hostnameToRegisteredDomain : String -> RegisteredDomain
-hostnameToRegisteredDomain hostname =
+hostnameToRegisteredDomain : Hostname -> RegisteredDomain
+hostnameToRegisteredDomain (Hostname hostname) =
     let
         maybeSuffix =
             PSL.list

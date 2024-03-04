@@ -10,19 +10,20 @@ import Time
 
 registeredDomainTestData =
     -- TODO wrap the below in Hostname types
-    [ ( "www.visitarizona.com", C.RegisteredDomain "visitarizona.com" )
-    , ( "foobar.bbc.co.uk", C.RegisteredDomain "bbc.co.uk" )
-    , ( "cmart.blog", C.RegisteredDomain "cmart.blog" )
-    , ( "package.elm-lang.org", C.RegisteredDomain "elm-lang.org" )
+    [ ( C.Hostname "www.visitarizona.com", C.RegisteredDomain "visitarizona.com" )
+    , ( C.Hostname "foobar.bbc.co.uk", C.RegisteredDomain "bbc.co.uk" )
+    , ( C.Hostname "cmart.blog", C.RegisteredDomain "cmart.blog" )
+    , ( C.Hostname "package.elm-lang.org", C.RegisteredDomain "elm-lang.org" )
     ]
 
 
 registeredDomains : Test
 registeredDomains =
     let
+        toTest : C.Hostname -> C.RegisteredDomain -> Test
         toTest hostname (C.RegisteredDomain rDom) =
             test
-                ("Hostname " ++ hostname ++ " has registered domain " ++ rDom)
+                ("Hostname " ++ C.unwrapHostname hostname ++ " has registered domain " ++ rDom)
                 (\_ ->
                     Expect.equal (hostname |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain) rDom
                 )
