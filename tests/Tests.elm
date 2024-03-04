@@ -9,6 +9,7 @@ import Time
 
 
 registeredDomainTestData =
+    -- TODO wrap the below in Hostname types
     [ ( "www.visitarizona.com", C.RegisteredDomain "visitarizona.com" )
     , ( "foobar.bbc.co.uk", C.RegisteredDomain "bbc.co.uk" )
     , ( "cmart.blog", C.RegisteredDomain "cmart.blog" )
@@ -37,7 +38,7 @@ registeredDomains =
 
 testModel : C.Model
 testModel =
-    C.Model [ { id = 123, url = "https://lobste.rs" } ] [ "weather.gov" ] [] [ testException ]
+    C.Model [ { id = 123, url = "https://lobste.rs" } ] [ C.Hostname "weather.gov" ] [] [ testException ]
 
 
 testException : C.Exception

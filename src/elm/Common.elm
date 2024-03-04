@@ -83,8 +83,8 @@ unwrapHostname (Hostname h) =
 
 type alias Model =
     { tabs : List Tab
-    , unsafeSites : List String
-    , safeSites : List String
+    , unsafeSites : List Hostname
+    , safeSites : List Hostname
     , exceptions : List Exception
     }
 
@@ -128,12 +128,12 @@ encodeModel model =
         , ( "unsafeSites"
           , Json.Encode.list
                 Json.Encode.string
-                model.unsafeSites
+                (List.map unwrapHostname model.unsafeSites)
           )
         , ( "safeSites"
           , Json.Encode.list
                 Json.Encode.string
-                model.safeSites
+                (List.map unwrapHostname model.safeSites)
           )
         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
         ]
@@ -208,10 +208,10 @@ modelDecoder =
     Json.Decode.map4 Model
         (Json.Decode.field "tabs" (Json.Decode.list tabDecoder))
         (Json.Decode.field "unsafeSites"
-            (Json.Decode.list Json.Decode.string)
+            (Json.Decode.list (Json.Decode.string |> Json.Decode.map Hostname))
         )
         (Json.Decode.field "safeSites"
-            (Json.Decode.list Json.Decode.string)
+            (Json.Decode.list (Json.Decode.string |> Json.Decode.map Hostname))
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
 
@@ -347,16 +347,12 @@ checkSiteStatus model url =
     in
     if
         model.unsafeSites
-            -- Ew, fix
-            |> List.map Hostname
             |> List.any (hostnameIncludes hostname)
     then
         Unsafe
 
     else if
         model.safeSites
-            -- Ew, fix
-            |> List.map Hostname
             |> List.any (hostnameIncludes hostname)
     then
         Safe

@@ -79,7 +79,7 @@ init flags =
                     -- Empty model because could not decode local storage
                     { tabs = []
                     , unsafeSites =
-                        C.unsafeSitesForDevTesting
+                        List.map C.Hostname C.unsafeSitesForDevTesting
                     , safeSites =
                         []
                     , exceptions = []
@@ -193,7 +193,7 @@ innerUpdate msg model =
 
 
 setSiteStatus : C.Model -> C.Hostname -> C.SiteStatus -> ( C.Model, Cmd Msg )
-setSiteStatus model (C.Hostname hostname) status =
+setSiteStatus model hostname status =
     let
         insert : a -> List a -> List a
         insert item list =
