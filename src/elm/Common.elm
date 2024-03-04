@@ -9,6 +9,57 @@ import Url
 
 
 
+-- Constants
+
+
+unsafeSitesForDevTesting : List String
+unsafeSitesForDevTesting =
+    [ "reddit.com"
+    , "redd.it"
+    , "facebook.com"
+    , "washingtonpost.com"
+    , "patreon.com"
+    , "ebay.com"
+    , "craigslist.org"
+    , "ycombinator.com"
+    , "nytimes.com"
+    , "politico.com"
+    , "news.google.com"
+    , "cnn.com"
+    , "fivethirtyeight.com"
+    , "twitter.com"
+    , "talkingpointsmemo.com"
+    , "axios.com"
+    , "apnews.com"
+    , "foxnews.com"
+    , "theonion.com"
+    , "twitter.com"
+    , "msnbc.com"
+    , "mtbr.com"
+    , "abcnews.com"
+    , "npr.org"
+    , "strava.com"
+    , "yahoo.com"
+    , "reuters.com"
+    , "slatestarcodex.com"
+    , "astralcodexten.substack.com"
+    , "astralcodexten.com"
+    , "lesswrong.com"
+    , "thezvi.substack.com"
+    , "thezvi.wordpress.com"
+    , "wikipedia.org"
+    , "nsmb.com"
+    , "meatengines.com"
+    , "radpowerbikes.com"
+    , "radpowerbikes.zendesk.com"
+    , "amazon.com"
+    , "cbsnews.com"
+    , "nbcnews.com"
+    , "frame.work"
+    ]
+
+
+
 -- Types
 
 

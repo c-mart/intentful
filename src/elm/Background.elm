@@ -79,8 +79,7 @@ init flags =
                     -- Empty model because could not decode local storage
                     { tabs = []
                     , unsafeDomains =
-                        [ "weather.gov"
-                        ]
+                        C.unsafeSitesForDevTesting
                     , safeDomains =
                         []
                     , exceptions = []
