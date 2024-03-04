@@ -230,8 +230,8 @@ messageFromBackgroundScriptDecoder =
 -- Helper functions
 
 
-getRegisteredDomain : String -> String
-getRegisteredDomain hostname =
+hostnameToRegisteredDomain : String -> String
+hostnameToRegisteredDomain hostname =
     let
         maybeSuffix =
             PSL.list

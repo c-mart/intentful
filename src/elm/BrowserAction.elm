@@ -150,7 +150,7 @@ viewValid model =
     Html.div []
         [ Html.text
             ("Current site is "
-                ++ (model.currentTabUrl.host |> C.getRegisteredDomain)
+                ++ (model.currentTabUrl.host |> C.hostnameToRegisteredDomain)
             )
         , Html.text
             ("This site is "

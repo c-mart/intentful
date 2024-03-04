@@ -23,7 +23,7 @@ registeredDomains =
             test
                 ("Hostname " ++ hostname ++ " has registered domain " ++ registeredDomain)
                 (\_ ->
-                    Expect.equal (C.getRegisteredDomain hostname) registeredDomain
+                    Expect.equal (C.hostnameToRegisteredDomain hostname) registeredDomain
                 )
     in
     describe "Registered domain"

@@ -141,7 +141,7 @@ innerUpdate msg model =
                         C.SetDomainStatus hostname status ->
                             let
                                 rDom =
-                                    C.getRegisteredDomain hostname
+                                    C.hostnameToRegisteredDomain hostname
                             in
                             setDomainStatus model rDom status
 
