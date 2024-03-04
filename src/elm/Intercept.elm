@@ -196,10 +196,13 @@ updateValid msg model =
 
         GotCreateException url endTime ->
             let
+                rDom =
+                    C.hostnameToRegisteredDomain url.host
+
                 exception =
                     C.encodeMessageToBackgroundScript
                         (C.NewException <|
-                            C.Exception url.host endTime
+                            C.Exception rDom endTime
                         )
             in
             ( model, sendMessage exception )

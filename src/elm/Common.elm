@@ -23,6 +23,8 @@ unwrapRegisteredDomain (RegisteredDomain rDom) =
 
 type alias Model =
     { tabs : List Tab
+
+    -- TODO want to use named type for these, but values of a Set must be comparable.
     , unsafeDomains : Set.Set String
     , safeDomains : Set.Set String
     , exceptions : List Exception
@@ -36,7 +38,7 @@ type alias Tab =
 
 
 type alias Exception =
-    { domain : String
+    { domain : RegisteredDomain
     , endTime : Time.Posix
     }
 
@@ -90,7 +92,7 @@ encodeTab tab =
 encodeException : Exception -> Json.Encode.Value
 encodeException exception =
     Json.Encode.object
-        [ ( "domain", Json.Encode.string exception.domain )
+        [ ( "domain", Json.Encode.string (unwrapRegisteredDomain exception.domain) )
         , ( "endTime", Json.Encode.int <| Time.posixToMillis exception.endTime )
         ]
 
@@ -170,7 +172,7 @@ tabDecoder =
 exceptionDecoder : Json.Decode.Decoder Exception
 exceptionDecoder =
     Json.Decode.map2 Exception
-        (Json.Decode.field "domain" Json.Decode.string)
+        (Json.Decode.field "domain" Json.Decode.string |> Json.Decode.map RegisteredDomain)
         (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
 
 
@@ -278,9 +280,9 @@ hostnameToRegisteredDomain hostname =
                 labelPriorToSuffix ++ "." ++ suffix
 
 
-doesMatch : String -> String -> Bool
-doesMatch hostname domain =
-    String.endsWith domain hostname
+doesMatch : String -> RegisteredDomain -> Bool
+doesMatch hostname (RegisteredDomain rDom) =
+    String.endsWith rDom hostname
 
 
 checkDomainStatus : Model -> Url.Url -> DomainStatus
@@ -292,6 +294,8 @@ checkDomainStatus model url =
     if
         model.unsafeDomains
             |> Set.toList
+            -- Ew, fix
+            |> List.map RegisteredDomain
             |> List.any (doesMatch hostname)
     then
         Unsafe
@@ -299,6 +303,8 @@ checkDomainStatus model url =
     else if
         model.safeDomains
             |> Set.toList
+            -- Ew, fix
+            |> List.map RegisteredDomain
             |> List.any (doesMatch hostname)
     then
         Safe
