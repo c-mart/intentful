@@ -30,7 +30,7 @@ type alias Model =
     , nextUrl : Url.Url
     , pageLoadTime : Time.Posix
     , currentTime : Time.Posix
-    , exceptionDurationInput : String
+    , viewState : ViewState
     }
 
 
@@ -43,6 +43,15 @@ type Msg
 
 
 -- Helper types
+
+
+type ViewState
+    = InitialView
+    | CreatingException ExceptionDurationInput
+
+
+type alias ExceptionDurationInput =
+    String
 
 
 type ExceptionCreatability
@@ -144,7 +153,7 @@ init flags =
     in
     case ( commonModel, nextUrl ) of
         ( Ok m, Ok u ) ->
-            ( AppValid <| Model m u time time "2", Cmd.none )
+            ( AppValid <| Model m u time time InitialView, Cmd.none )
 
         ( Err decodeErr, _ ) ->
             ( AppInvalid (Json.Decode.errorToString decodeErr), Cmd.none )
@@ -188,7 +197,13 @@ updateValid msg model =
             ( { model | currentTime = time }, Cmd.none )
 
         GotExceptionDurationInput minsStr ->
-            ( { model | exceptionDurationInput = minsStr }, Cmd.none )
+            case model.viewState of
+                InitialView ->
+                    -- Impossible state?
+                    ( model, Cmd.none )
+
+                CreatingException _ ->
+                    ( { model | viewState = CreatingException minsStr }, Cmd.none )
 
         GotCreateException url endTime ->
             let
@@ -229,9 +244,24 @@ subs =
 
 viewValid : Model -> Html Msg
 viewValid model =
+    case model.viewState of
+        InitialView ->
+            viewInitial model
+
+        CreatingException durationInput ->
+            viewCreatingException model durationInput
+
+
+viewInitial : Model -> Html Msg
+viewInitial model =
+    Html.text "TODO"
+
+
+viewCreatingException : Model -> ExceptionDurationInput -> Html Msg
+viewCreatingException model durationInput =
     let
         createExceptionButton =
-            case canCreateException model of
+            case canCreateException model durationInput of
                 CanCreate durationMins ->
                     let
                         expireTime =
@@ -262,7 +292,7 @@ viewValid model =
                     [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
                     , Html.input
                         [ HtmlE.onInput GotExceptionDurationInput
-                        , HtmlA.value model.exceptionDurationInput
+                        , HtmlA.value durationInput
                         ]
                         []
                     , Html.text "minutes"
@@ -273,8 +303,8 @@ viewValid model =
         ]
 
 
-canCreateException : Model -> ExceptionCreatability
-canCreateException model =
+canCreateException : Model -> ExceptionDurationInput -> ExceptionCreatability
+canCreateException model durationInput =
     let
         waitDurationMillis =
             -- 10 seconds
@@ -287,7 +317,7 @@ canCreateException model =
         WaitToCreate waitRemainMillis
 
     else
-        case String.toInt model.exceptionDurationInput of
+        case String.toInt durationInput of
             Just i ->
                 CanCreate i
 
