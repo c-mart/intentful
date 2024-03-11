@@ -52,10 +52,14 @@ type ViewState
 
 
 type alias CreatingExceptionParams =
-    -- TODO add reason input
     { timeEnteredForm : Time.Posix
+    , reasonInput : ExceptionReasonInput
     , durationInput : ExceptionDurationInput
     }
+
+
+type alias ExceptionReasonInput =
+    String
 
 
 type alias ExceptionDurationInput =
@@ -211,7 +215,7 @@ updateValid msg model =
             ( model, closeCurrentTab () )
 
         GotAdvanceToCreateException ->
-            ( { model | viewState = CreatingException { timeEnteredForm = model.currentTime, durationInput = "1" } }, Cmd.none )
+            ( { model | viewState = CreatingException (initCreatingExceptionParams model.currentTime) }, Cmd.none )
 
         GotExceptionDurationInput minsStr ->
             case model.viewState of
@@ -257,6 +261,14 @@ subs =
 
 
 -- Helper functions
+
+
+initCreatingExceptionParams : Time.Posix -> CreatingExceptionParams
+initCreatingExceptionParams timeEnteredForm =
+    { timeEnteredForm = timeEnteredForm
+    , reasonInput = ""
+    , durationInput = "1"
+    }
 
 
 viewValid : Model -> Html Msg
