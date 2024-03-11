@@ -326,6 +326,12 @@ viewCreatingException model durationInput =
                     ]
                 ]
             , Html.li [] [ createExceptionButton ]
+            , Html.li []
+                [ Html.button
+                    [ HtmlE.onClick GotCloseCurrentTab
+                    ]
+                    [ Html.text "Close the tab, I don't need to go here" ]
+                ]
             ]
         ]
 
