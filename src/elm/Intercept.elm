@@ -53,8 +53,10 @@ type ViewState
 
 
 type alias CreatingExceptionParams =
-    -- TODO add time that user advanced here, and reason input
-    { durationInput : ExceptionDurationInput }
+    -- TODO add reason input
+    { timeEnteredForm : Time.Posix
+    , durationInput : ExceptionDurationInput
+    }
 
 
 type alias ExceptionDurationInput =
@@ -210,7 +212,7 @@ updateValid msg model =
             ( model, closeCurrentTab () )
 
         GotAdvanceToCreateException ->
-            ( { model | viewState = CreatingException { durationInput = "1" } }, Cmd.none )
+            ( { model | viewState = CreatingException { timeEnteredForm = model.currentTime, durationInput = "1" } }, Cmd.none )
 
         GotExceptionDurationInput minsStr ->
             case model.viewState of
@@ -218,8 +220,8 @@ updateValid msg model =
                     -- Impossible state?
                     ( model, Cmd.none )
 
-                CreatingException _ ->
-                    ( { model | viewState = CreatingException { durationInput = minsStr } }, Cmd.none )
+                CreatingException params ->
+                    ( { model | viewState = CreatingException { params | durationInput = minsStr } }, Cmd.none )
 
         GotCreateException url endTime ->
             let
@@ -293,7 +295,7 @@ viewCreatingException : Model -> CreatingExceptionParams -> Html Msg
 viewCreatingException model params =
     let
         createExceptionButton =
-            case canCreateException model params.durationInput of
+            case canCreateException model params of
                 CanCreate durationMins ->
                     let
                         expireTime =
@@ -341,21 +343,21 @@ viewCreatingException model params =
         ]
 
 
-canCreateException : Model -> ExceptionDurationInput -> ExceptionCreatability
-canCreateException model durationInput =
+canCreateException : Model -> CreatingExceptionParams -> ExceptionCreatability
+canCreateException model params =
     let
         waitDurationMillis =
             -- TODO start this when someone advances to create exception, not when intercept page loads
             3 * 1000 - 1
 
         waitRemainMillis =
-            waitDurationMillis - (Time.posixToMillis model.currentTime - Time.posixToMillis model.pageLoadTime)
+            waitDurationMillis - (Time.posixToMillis model.currentTime - Time.posixToMillis params.timeEnteredForm)
     in
     if waitRemainMillis > 0 then
         WaitToCreate waitRemainMillis
 
     else
-        case String.toInt durationInput of
+        case String.toInt params.durationInput of
             Just i ->
                 CanCreate i
 
