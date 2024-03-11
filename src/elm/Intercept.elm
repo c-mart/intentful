@@ -28,7 +28,6 @@ type AppValidity
 type alias Model =
     { common : C.Model
     , nextUrl : Url.Url
-    , pageLoadTime : Time.Posix
     , currentTime : Time.Posix
     , viewState : ViewState
     }
@@ -165,7 +164,7 @@ init flags =
     in
     case ( commonModel, nextUrl ) of
         ( Ok m, Ok u ) ->
-            ( AppValid <| Model m u time time InitialView, Cmd.none )
+            ( AppValid <| Model m u time InitialView, Cmd.none )
 
         ( Err decodeErr, _ ) ->
             ( AppInvalid (Json.Decode.errorToString decodeErr), Cmd.none )
