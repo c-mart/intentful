@@ -70,6 +70,7 @@ type alias ExceptionDurationInput =
 type ExceptionCreatability
     = CanCreate MinutesInt
     | WaitToCreate TimeRemainingMillis
+    | InvalidReason
     | InvalidDuration
 
 
@@ -330,6 +331,9 @@ viewCreatingException model params =
                 WaitToCreate waitRemainMillis ->
                     Html.button [] [ Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis ]
 
+                InvalidReason ->
+                    Html.button [] [ Html.text "Provide a longer reason for using the unsafe site" ]
+
                 InvalidDuration ->
                     Html.button [] [ Html.text "Breaux, you must enter a number of minutes" ]
     in
@@ -383,16 +387,22 @@ canCreateException model params =
 
         waitRemainMillis =
             waitDurationMillis - (Time.posixToMillis model.currentTime - Time.posixToMillis params.timeEnteredForm)
+
+        reasonValid =
+            String.length params.reasonInput > 20
     in
     if waitRemainMillis > 0 then
         WaitToCreate waitRemainMillis
 
     else
-        case String.toInt params.durationInput of
-            Just i ->
+        case ( String.toInt params.durationInput, reasonValid ) of
+            ( Just i, True ) ->
                 CanCreate i
 
-            Nothing ->
+            ( _, False ) ->
+                InvalidReason
+
+            ( Nothing, _ ) ->
                 InvalidDuration
 
 
