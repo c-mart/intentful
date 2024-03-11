@@ -16,6 +16,11 @@ function receiveMessage(message) {
       browser.runtime.sendMessage(message);
     });
 
+    app.ports.closeCurrentTab.subscribe(async function () {
+      const currentTab = await browser.tabs.getCurrent();
+      browser.tabs.remove(currentTab.id);
+    })
+
   } else if (app !== undefined) {
 
     app.ports.receiveMessage.send(message);

@@ -37,6 +37,7 @@ type alias Model =
 type Msg
     = ReceiveMessage Json.Encode.Value
     | ReceiveCurrentTime Time.Posix
+    | GotCloseCurrentTab
     | GotAdvanceToCreateException
     | GotCreateException Url.Url ExceptionEndTime
     | GotExceptionDurationInput String
@@ -81,6 +82,9 @@ port receiveMessage : (Json.Encode.Value -> msg) -> Sub msg
 
 
 port sendMessage : Json.Encode.Value -> Cmd msg
+
+
+port closeCurrentTab : () -> Cmd msg
 
 
 
@@ -197,6 +201,9 @@ updateValid msg model =
         ReceiveCurrentTime time ->
             ( { model | currentTime = time }, Cmd.none )
 
+        GotCloseCurrentTab ->
+            ( model, closeCurrentTab () )
+
         GotAdvanceToCreateException ->
             ( { model | viewState = CreatingException "1" }, Cmd.none )
 
@@ -269,7 +276,7 @@ viewInitial model =
             [ Html.li [ HtmlE.onClick GotAdvanceToCreateException ] [ Html.button [] [ Html.text "Proceed anyway" ] ]
             , Html.li []
                 [ Html.button
-                    [-- TODO close the tab when this is clicked
+                    [ HtmlE.onClick GotCloseCurrentTab
                     ]
                     [ Html.text "Close the tab, I don't need to go here" ]
                 ]
