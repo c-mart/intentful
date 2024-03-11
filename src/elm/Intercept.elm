@@ -39,6 +39,7 @@ type Msg
     | GotCloseCurrentTab
     | GotAdvanceToCreateException
     | GotCreateException Url.Url ExceptionEndTime
+    | GotExceptionReasonInput String
     | GotExceptionDurationInput String
 
 
@@ -217,6 +218,15 @@ updateValid msg model =
         GotAdvanceToCreateException ->
             ( { model | viewState = CreatingException (initCreatingExceptionParams model.currentTime) }, Cmd.none )
 
+        GotExceptionReasonInput reasonStr ->
+            case model.viewState of
+                InitialView ->
+                    -- Impossible state?
+                    ( model, Cmd.none )
+
+                CreatingException params ->
+                    ( { model | viewState = CreatingException { params | reasonInput = reasonStr } }, Cmd.none )
+
         GotExceptionDurationInput minsStr ->
             case model.viewState of
                 InitialView ->
@@ -333,6 +343,16 @@ viewCreatingException model params =
             ]
         , Html.ul []
             [ Html.li []
+                [ Html.div []
+                    [ Html.text ("Why do you want to use " ++ model.nextUrl.host ++ " now?")
+                    , Html.input
+                        [ HtmlE.onInput GotExceptionReasonInput
+                        , HtmlA.value params.reasonInput
+                        ]
+                        []
+                    ]
+                ]
+            , Html.li []
                 [ Html.span []
                     [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
                     , Html.input
