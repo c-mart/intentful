@@ -37,6 +37,7 @@ type alias Model =
 type Msg
     = ReceiveMessage Json.Encode.Value
     | ReceiveCurrentTime Time.Posix
+    | GotAdvanceToCreateException
     | GotCreateException Url.Url ExceptionEndTime
     | GotExceptionDurationInput String
 
@@ -196,6 +197,9 @@ updateValid msg model =
         ReceiveCurrentTime time ->
             ( { model | currentTime = time }, Cmd.none )
 
+        GotAdvanceToCreateException ->
+            ( { model | viewState = CreatingException "1" }, Cmd.none )
+
         GotExceptionDurationInput minsStr ->
             case model.viewState of
                 InitialView ->
@@ -254,7 +258,23 @@ viewValid model =
 
 viewInitial : Model -> Html Msg
 viewInitial model =
-    Html.text "TODO"
+    Html.div []
+        [ Html.p []
+            [ Html.text
+                (model.nextUrl.host
+                    ++ " is an unsafe site."
+                )
+            ]
+        , Html.ul []
+            [ Html.li [ HtmlE.onClick GotAdvanceToCreateException ] [ Html.button [] [ Html.text "Proceed anyway" ] ]
+            , Html.li []
+                [ Html.button
+                    [-- TODO close the tab when this is clicked
+                    ]
+                    [ Html.text "Close the tab, I don't need to go here" ]
+                ]
+            ]
+        ]
 
 
 viewCreatingException : Model -> ExceptionDurationInput -> Html Msg
@@ -307,7 +327,7 @@ canCreateException : Model -> ExceptionDurationInput -> ExceptionCreatability
 canCreateException model durationInput =
     let
         waitDurationMillis =
-            -- 10 seconds
+            -- TODO start this when someone advances to create exception, not when intercept page loads
             3 * 1000 - 1
 
         waitRemainMillis =
