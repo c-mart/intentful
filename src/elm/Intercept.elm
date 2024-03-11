@@ -240,10 +240,10 @@ viewValid model =
                                 |> (+) (durationMins * 60 * 1000)
                                 |> Time.millisToPosix
                     in
-                    Html.button [ HtmlE.onClick (GotCreateException model.nextUrl expireTime) ] [ Html.text "Create exception" ]
+                    Html.button [ HtmlE.onClick (GotCreateException model.nextUrl expireTime) ] [ Html.text ("Go to " ++ model.nextUrl.host) ]
 
                 WaitToCreate waitRemainMillis ->
-                    Html.button [] [ Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis ++ " to create an exception" ]
+                    Html.button [] [ Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis ]
 
                 InvalidDuration ->
                     Html.button [] [ Html.text "Breaux, you must enter a number of minutes" ]
@@ -252,16 +252,21 @@ viewValid model =
         [ Html.p []
             [ Html.text
                 ("You were going to "
-                    ++ (model.nextUrl.host |> C.Hostname |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain)
+                    ++ model.nextUrl.host
+                    ++ ", an unsafe site."
                 )
             ]
         , Html.ul []
             [ Html.li []
-                [ Html.input
-                    [ HtmlE.onInput GotExceptionDurationInput
-                    , HtmlA.value model.exceptionDurationInput
+                [ Html.span []
+                    [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
+                    , Html.input
+                        [ HtmlE.onInput GotExceptionDurationInput
+                        , HtmlA.value model.exceptionDurationInput
+                        ]
+                        []
+                    , Html.text "minutes"
                     ]
-                    []
                 ]
             , Html.li [] [ createExceptionButton ]
             ]
