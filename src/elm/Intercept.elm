@@ -49,7 +49,12 @@ type Msg
 
 type ViewState
     = InitialView
-    | CreatingException ExceptionDurationInput
+    | CreatingException CreatingExceptionParams
+
+
+type alias CreatingExceptionParams =
+    -- TODO add time that user advanced here, and reason input
+    { durationInput : ExceptionDurationInput }
 
 
 type alias ExceptionDurationInput =
@@ -205,7 +210,7 @@ updateValid msg model =
             ( model, closeCurrentTab () )
 
         GotAdvanceToCreateException ->
-            ( { model | viewState = CreatingException "1" }, Cmd.none )
+            ( { model | viewState = CreatingException { durationInput = "1" } }, Cmd.none )
 
         GotExceptionDurationInput minsStr ->
             case model.viewState of
@@ -214,7 +219,7 @@ updateValid msg model =
                     ( model, Cmd.none )
 
                 CreatingException _ ->
-                    ( { model | viewState = CreatingException minsStr }, Cmd.none )
+                    ( { model | viewState = CreatingException { durationInput = minsStr } }, Cmd.none )
 
         GotCreateException url endTime ->
             let
@@ -259,8 +264,8 @@ viewValid model =
         InitialView ->
             viewInitial model
 
-        CreatingException durationInput ->
-            viewCreatingException model durationInput
+        CreatingException params ->
+            viewCreatingException model params
 
 
 viewInitial : Model -> Html Msg
@@ -284,11 +289,11 @@ viewInitial model =
         ]
 
 
-viewCreatingException : Model -> ExceptionDurationInput -> Html Msg
-viewCreatingException model durationInput =
+viewCreatingException : Model -> CreatingExceptionParams -> Html Msg
+viewCreatingException model params =
     let
         createExceptionButton =
-            case canCreateException model durationInput of
+            case canCreateException model params.durationInput of
                 CanCreate durationMins ->
                     let
                         expireTime =
@@ -319,7 +324,7 @@ viewCreatingException model durationInput =
                     [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
                     , Html.input
                         [ HtmlE.onInput GotExceptionDurationInput
-                        , HtmlA.value durationInput
+                        , HtmlA.value params.durationInput
                         ]
                         []
                     , Html.text "minutes"
