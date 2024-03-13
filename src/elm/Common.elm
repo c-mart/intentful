@@ -97,6 +97,7 @@ type alias Tab =
 
 type alias Exception =
     { site : Hostname
+    , reason : String
     , endTime : Time.Posix
     }
 
@@ -151,6 +152,7 @@ encodeException : Exception -> Json.Encode.Value
 encodeException exception =
     Json.Encode.object
         [ ( "site", Json.Encode.string (unwrapHostname exception.site) )
+        , ( "reason", Json.Encode.string exception.reason )
         , ( "endTime", Json.Encode.int <| Time.posixToMillis exception.endTime )
         ]
 
@@ -225,8 +227,9 @@ tabDecoder =
 
 exceptionDecoder : Json.Decode.Decoder Exception
 exceptionDecoder =
-    Json.Decode.map2 Exception
+    Json.Decode.map3 Exception
         (Json.Decode.field "site" Json.Decode.string |> Json.Decode.map Hostname)
+        (Json.Decode.field "reason" Json.Decode.string)
         (Json.Decode.field "endTime" Json.Decode.int |> Json.Decode.map Time.millisToPosix)
 
 

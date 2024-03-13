@@ -38,7 +38,7 @@ type Msg
     | ReceiveCurrentTime Time.Posix
     | GotCloseCurrentTab
     | GotAdvanceToCreateException
-    | GotCreateException Url.Url ExceptionEndTime
+    | GotCreateException Url.Url String ExceptionEndTime
     | GotExceptionReasonInput String
     | GotExceptionDurationInput String
 
@@ -237,12 +237,12 @@ updateValid msg model =
                 CreatingException params ->
                     ( { model | viewState = CreatingException { params | durationInput = minsStr } }, Cmd.none )
 
-        GotCreateException url endTime ->
+        GotCreateException url reason endTime ->
             let
                 exception =
                     C.encodeMessageToBackgroundScript
                         (C.NewException <|
-                            C.Exception (C.Hostname url.host) endTime
+                            C.Exception (C.Hostname url.host) reason endTime
                         )
             in
             ( model, sendMessage exception )
@@ -326,7 +326,7 @@ viewCreatingException model params =
                                 |> (+) (durationMins * 60 * 1000)
                                 |> Time.millisToPosix
                     in
-                    Html.button [ HtmlE.onClick (GotCreateException model.nextUrl expireTime) ] [ Html.text ("Go to " ++ model.nextUrl.host) ]
+                    Html.button [ HtmlE.onClick (GotCreateException model.nextUrl params.reasonInput expireTime) ] [ Html.text ("Go to " ++ model.nextUrl.host) ]
 
                 WaitToCreate waitRemainMillis ->
                     Html.button [] [ Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis ]

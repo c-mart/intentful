@@ -44,7 +44,7 @@ testModel =
 
 testException : C.Exception
 testException =
-    C.Exception (C.Hostname "facebook.com") (Time.millisToPosix 1704223664)
+    C.Exception (C.Hostname "facebook.com") "Check when Aunt Betty's birthday is" (Time.millisToPosix 1704223664)
 
 
 modelRoundTrip : Test
