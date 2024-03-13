@@ -383,7 +383,7 @@ canCreateException model params =
     let
         waitDurationMillis =
             -- TODO start this when someone advances to create exception, not when intercept page loads
-            3 * 1000 - 1
+            30 * 1000 - 1
 
         waitRemainMillis =
             waitDurationMillis - (Time.posixToMillis model.currentTime - Time.posixToMillis params.timeEnteredForm)
