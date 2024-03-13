@@ -382,7 +382,6 @@ canCreateException : Model -> CreatingExceptionParams -> ExceptionCreatability
 canCreateException model params =
     let
         waitDurationMillis =
-            -- TODO start this when someone advances to create exception, not when intercept page loads
             30 * 1000 - 1
 
         waitRemainMillis =
