@@ -83,6 +83,7 @@ init flags =
                     , safeSites =
                         []
                     , exceptions = []
+                    , mode = C.NormalMode
                     }
     in
     ( model

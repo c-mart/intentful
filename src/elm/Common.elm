@@ -86,6 +86,7 @@ type alias Model =
     , unsafeSites : List Hostname
     , safeSites : List Hostname
     , exceptions : List Exception
+    , mode : Mode
     }
 
 
@@ -107,6 +108,11 @@ type alias Exception =
     , reason : String
     , endTime : Time.Posix
     }
+
+
+type Mode
+    = NormalMode
+    | TestMode
 
 
 type SiteStatus
@@ -144,6 +150,7 @@ encodeModel model =
                 (List.map unwrapHostname model.safeSites)
           )
         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
+        , ( "mode", Json.Encode.string (modeToStr model.mode) )
         ]
 
 
@@ -208,13 +215,18 @@ encodeMessageToBackgroundScript message =
                 ]
 
 
+encodeMode : Mode -> Json.Encode.Value
+encodeMode mode =
+    mode |> modeToStr |> Json.Encode.string
+
+
 
 -- Decoders
 
 
 modelDecoder : Json.Decode.Decoder Model
 modelDecoder =
-    Json.Decode.map4 Model
+    Json.Decode.map5 Model
         (Json.Decode.field "tabs" (Json.Decode.list tabDecoder))
         (Json.Decode.field "unsafeSites"
             (Json.Decode.list (Json.Decode.string |> Json.Decode.map Hostname))
@@ -223,6 +235,7 @@ modelDecoder =
             (Json.Decode.list (Json.Decode.string |> Json.Decode.map Hostname))
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
+        (Json.Decode.field "mode" modeDecoder)
 
 
 tabDecoder : Json.Decode.Decoder Tab
@@ -259,6 +272,20 @@ siteStatusDecoder =
     in
     Json.Decode.andThen toStatus
         Json.Decode.string
+
+
+modeDecoder : Json.Decode.Decoder Mode
+modeDecoder =
+    Json.Decode.string
+        |> Json.Decode.andThen
+            (\str ->
+                case modeFromStr str of
+                    Ok mode ->
+                        Json.Decode.succeed mode
+
+                    Err errStr ->
+                        Json.Decode.fail errStr
+            )
 
 
 messageToBackgroundScriptDecoder : Json.Decode.Decoder MessageToBackgroundScript
@@ -388,3 +415,26 @@ checkIfIntercept model url =
         _ ->
             -- TODO later show a pop-up or something on unknown sites, asking user to categorize it. This logic may change.
             False
+
+
+modeToStr : Mode -> String
+modeToStr mode =
+    case mode of
+        NormalMode ->
+            "normalMode"
+
+        TestMode ->
+            "testMode"
+
+
+modeFromStr : String -> Result String Mode
+modeFromStr str =
+    case str of
+        "normalMode" ->
+            Ok NormalMode
+
+        "testMode" ->
+            Ok TestMode
+
+        _ ->
+            Err ("unrecognized string " ++ str ++ " for application mode")
