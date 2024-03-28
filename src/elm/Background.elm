@@ -2,7 +2,7 @@ port module Background exposing (..)
 
 import Common as C exposing (RegisteredDomain)
 import Debug
-import Html exposing (a)
+import Html.Styled exposing (a)
 import Json.Decode
 import Json.Encode
 import Set

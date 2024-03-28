@@ -5,9 +5,9 @@ import Browser
 import Browser.Navigation
 import Common as C
 import Debug
-import Html exposing (Html)
-import Html.Attributes as HtmlA
-import Html.Events as HtmlE
+import Html.Styled as Html exposing (Html)
+import Html.Styled.Attributes as HtmlA
+import Html.Styled.Events as HtmlE
 import Json.Decode
 import Json.Encode
 import Time
@@ -108,7 +108,7 @@ main =
     Browser.element
         { init = init
         , update = update
-        , view = view
+        , view = view >> Html.toUnstyled
         , subscriptions = \_ -> subs
         }
 
@@ -284,12 +284,19 @@ initCreatingExceptionParams timeEnteredForm =
 
 viewValid : Model -> Html Msg
 viewValid model =
-    case model.viewState of
-        InitialView ->
-            viewInitial model
+    Html.div []
+        [ if model.common.mode == C.TestMode then
+            C.testModeBanner
 
-        CreatingException params ->
-            viewCreatingException model params
+          else
+            Html.text ""
+        , case model.viewState of
+            InitialView ->
+                viewInitial model
+
+            CreatingException params ->
+                viewCreatingException model params
+        ]
 
 
 viewInitial : Model -> Html Msg

@@ -1,5 +1,8 @@
 module Common exposing (..)
 
+import Css
+import Html.Styled as Html
+import Html.Styled.Attributes as HtmlA
 import Json.Decode
 import Json.Encode
 import PSL
@@ -438,3 +441,12 @@ modeFromStr str =
 
         _ ->
             Err ("unrecognized string " ++ str ++ " for application mode")
+
+
+
+-- UI code
+
+
+testModeBanner : Html.Html msg
+testModeBanner =
+    Html.strong [ HtmlA.css [ Css.color (Css.rgb 255 0 0) ] ] [ Html.text "Danger: Test Mode" ]

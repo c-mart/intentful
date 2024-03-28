@@ -3,8 +3,8 @@ port module BrowserAction exposing (..)
 import Background exposing (Msg(..))
 import Browser
 import Common as C
-import Html exposing (Html)
-import Html.Events as HtmlE
+import Html.Styled as Html exposing (Html)
+import Html.Styled.Events as HtmlE
 import Json.Decode
 import Json.Encode
 import Url
@@ -55,7 +55,7 @@ main =
     Browser.element
         { init = init
         , update = update
-        , view = view
+        , view = view >> Html.toUnstyled
         , subscriptions = \_ -> subs
         }
 
@@ -157,7 +157,12 @@ view validity =
 viewValid : Model -> Html Msg
 viewValid model =
     Html.div []
-        [ Html.text
+        [ if model.common.mode == C.TestMode then
+            C.testModeBanner
+
+          else
+            Html.text ""
+        , Html.text
             ("Current site is "
                 ++ (model.currentTabUrl.host |> C.Hostname |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain)
             )
