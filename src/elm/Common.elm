@@ -95,6 +95,13 @@ type alias Tab =
     }
 
 
+type alias NavigationEvent =
+    { tabId : Int
+    , url : String
+    , frameId : Int
+    }
+
+
 type alias Exception =
     { site : Hostname
     , reason : String

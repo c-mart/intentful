@@ -35,6 +35,7 @@ function onGot(storedState) {
     backgroundApp.ports.getUrlChange.send({
       id: details.tabId,
       url: details.url,
+      frameId: details.frameId
     });
 
     return;

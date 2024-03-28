@@ -146,12 +146,20 @@ innerUpdate msg model =
 
         GotUrlChange urlChangeJson ->
             case decodeUrlChange urlChangeJson of
-                Ok tab ->
-                    let
-                        newModel =
-                            modelUpdateTab model tab
-                    in
-                    ( newModel, processTab newModel tab )
+                Ok navEvent ->
+                    if navEvent.frameId == 0 then
+                        let
+                            tab =
+                                C.Tab navEvent.tabId navEvent.url
+
+                            newModel =
+                                modelUpdateTab model tab
+                        in
+                        ( newModel, processTab newModel tab )
+
+                    else
+                        -- Navigation happened within a nested iframe, so we don't care about it right now
+                        ( model, Cmd.none )
 
                 Err e ->
                     ( model
@@ -287,9 +295,9 @@ encodeRedirect tabId url =
         ]
 
 
-decodeUrlChange : Json.Decode.Value -> Result Json.Decode.Error C.Tab
+decodeUrlChange : Json.Decode.Value -> Result Json.Decode.Error C.NavigationEvent
 decodeUrlChange urlChangeJson =
-    Json.Decode.decodeValue tabDecoder urlChangeJson
+    Json.Decode.decodeValue navigationEventDecoder urlChangeJson
 
 
 decodeTabs : Json.Decode.Value -> Result Json.Decode.Error (List C.Tab)
@@ -302,3 +310,11 @@ tabDecoder =
     Json.Decode.map2 C.Tab
         (Json.Decode.field "id" Json.Decode.int)
         (Json.Decode.field "url" Json.Decode.string)
+
+
+navigationEventDecoder : Json.Decode.Decoder C.NavigationEvent
+navigationEventDecoder =
+    Json.Decode.map3 C.NavigationEvent
+        (Json.Decode.field "id" Json.Decode.int)
+        (Json.Decode.field "url" Json.Decode.string)
+        (Json.Decode.field "frameId" Json.Decode.int)
