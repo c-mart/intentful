@@ -389,7 +389,16 @@ canCreateException : Model -> CreatingExceptionParams -> ExceptionCreatability
 canCreateException model params =
     let
         waitDurationMillis =
-            30 * 1000 - 1
+            let
+                seconds =
+                    case model.common.mode of
+                        C.NormalMode ->
+                            30
+
+                        C.TestMode ->
+                            3
+            in
+            seconds * 1000 - 1
 
         waitRemainMillis =
             waitDurationMillis - (Time.posixToMillis model.currentTime - Time.posixToMillis params.timeEnteredForm)
