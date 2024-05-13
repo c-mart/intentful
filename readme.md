@@ -18,6 +18,10 @@ Once your time limit expires, Intentful encourages self-reflection and nudges yo
 
 ![Screenshot of unknown site](docs/assets/img/time-expired.png)
 
+## Why it Works
+
+TODO
+
 ## Development Status
 
 Proof of concept. Works in Firefox.
