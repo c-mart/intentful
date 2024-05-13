@@ -1,4 +1,4 @@
-Intentful: browser extension that provides a new approach to managing your attention and focus online.
+**Intentful is a browser extension, providing a new approach to managing your attention and focus online.**
 
 ## How it Works
 
