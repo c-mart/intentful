@@ -52,7 +52,14 @@ function onGot(storedState) {
   backgroundApp.ports.consoleLog.subscribe(function (e) {
     console.log(e);
   });
+
+  function setTestMode() {
+    backgroundApp.ports.setTestMode.send(Date.now());
+  }
+  window.setTestMode = setTestMode;
+
 }
+
 
 function onError(error) {
   console.log(`Error: ${error}`);

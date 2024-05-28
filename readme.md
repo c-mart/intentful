@@ -61,9 +61,5 @@ First, browser to `about:debugging#/runtime/this-firefox`, and inspect the exten
 Then enter in the extension-specific developer console:
 
 ```js
-browser.storage.local.set({mode: "testMode"});
+setTestMode();
 ```
-
-Then reload the extension.
-
-![reload extension screenshot](docs/assets/img/reload-extension.jpg)

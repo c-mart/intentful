@@ -1,6 +1,6 @@
 port module Background exposing (..)
 
-import Common as C exposing (RegisteredDomain)
+import Common as C exposing (Mode(..), RegisteredDomain)
 import Debug
 import Html.Styled exposing (a)
 import Json.Decode
@@ -21,6 +21,7 @@ type Msg
     | GotCurrentTime Time.Posix
     | GotTabs Json.Encode.Value
     | GotAlarm Json.Encode.Value
+    | GotSetTestMode Int
 
 
 
@@ -52,6 +53,9 @@ port consoleLog : String -> Cmd msg
 
 
 port receiveAlarm : (Json.Encode.Value -> msg) -> Sub msg
+
+
+port setTestMode : (Int -> msg) -> Sub msg
 
 
 
@@ -117,6 +121,7 @@ subs _ =
         , receiveTabs GotTabs
         , receiveAlarm GotAlarm
         , Time.every 5000 GotCurrentTime
+        , setTestMode GotSetTestMode
         ]
 
 
@@ -199,6 +204,17 @@ innerUpdate msg model =
                     ( model
                     , logJsonError "Could not decode tabs" e
                     )
+
+        GotSetTestMode epoch ->
+            let
+                expireTime =
+                    -- 2 hours from now
+                    epoch + (2 * 3600 * 1000) |> Time.millisToPosix
+
+                newModel =
+                    { model | mode = TestMode expireTime }
+            in
+            ( newModel, Cmd.none )
 
 
 setSiteStatus : C.Model -> C.Hostname -> C.SiteStatus -> ( C.Model, Cmd Msg )
