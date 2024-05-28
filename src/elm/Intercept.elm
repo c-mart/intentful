@@ -285,11 +285,13 @@ initCreatingExceptionParams timeEnteredForm =
 viewValid : Model -> Html Msg
 viewValid model =
     Html.div []
-        [ if model.common.mode == C.TestMode then
-            C.testModeBanner
+        [ case model.common.mode of
+            C.TestMode _ ->
+                C.testModeBanner
 
-          else
-            Html.text ""
+            _ ->
+                -- TODO consider Html.none?
+                Html.text ""
         , case model.viewState of
             InitialView ->
                 viewInitial model
@@ -395,7 +397,7 @@ canCreateException model params =
                         C.NormalMode ->
                             30
 
-                        C.TestMode ->
+                        C.TestMode _ ->
                             3
             in
             seconds * 1000 - 1

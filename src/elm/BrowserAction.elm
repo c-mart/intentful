@@ -157,11 +157,13 @@ view validity =
 viewValid : Model -> Html Msg
 viewValid model =
     Html.div []
-        [ if model.common.mode == C.TestMode then
-            C.testModeBanner
+        [ case model.common.mode of
+            C.TestMode _ ->
+                C.testModeBanner
 
-          else
-            Html.text ""
+            _ ->
+                -- TODO consider Html.none
+                Html.text ""
         , Html.text
             ("Current site is "
                 ++ (model.currentTabUrl.host |> C.Hostname |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain)

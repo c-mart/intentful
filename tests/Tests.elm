@@ -39,7 +39,7 @@ registeredDomains =
 
 testModel : C.Model
 testModel =
-    C.Model [ { id = 123, url = "https://lobste.rs" } ] [ C.Hostname "weather.gov" ] [] [ testException ] C.NormalMode
+    C.Model [ { id = 123, url = "https://lobste.rs" } ] [ C.Hostname "weather.gov" ] [] [ testException ] (C.TestMode (Time.millisToPosix 1704293664))
 
 
 testException : C.Exception

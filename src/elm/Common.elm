@@ -115,7 +115,11 @@ type alias Exception =
 
 type Mode
     = NormalMode
-    | TestMode
+    | TestMode TestModeExpireTime
+
+
+type alias TestModeExpireTime =
+    Time.Posix
 
 
 type SiteStatus
@@ -141,20 +145,21 @@ type MessageToBackgroundScript
 encodeModel : Model -> Json.Encode.Value
 encodeModel model =
     Json.Encode.object
-        [ ( "tabs", Json.Encode.list encodeTab model.tabs )
-        , ( "unsafeSites"
-          , Json.Encode.list
+        ([ ( "tabs", Json.Encode.list encodeTab model.tabs )
+         , ( "unsafeSites"
+           , Json.Encode.list
                 Json.Encode.string
                 (List.map unwrapHostname model.unsafeSites)
-          )
-        , ( "safeSites"
-          , Json.Encode.list
+           )
+         , ( "safeSites"
+           , Json.Encode.list
                 Json.Encode.string
                 (List.map unwrapHostname model.safeSites)
-          )
-        , ( "exceptions", Json.Encode.list encodeException model.exceptions )
-        , ( "mode", Json.Encode.string (modeToStr model.mode) )
-        ]
+           )
+         , ( "exceptions", Json.Encode.list encodeException model.exceptions )
+         ]
+            ++ encodeMode model
+        )
 
 
 encodeTab : Tab -> Json.Encode.Value
@@ -218,9 +223,16 @@ encodeMessageToBackgroundScript message =
                 ]
 
 
-encodeMode : Mode -> Json.Encode.Value
-encodeMode mode =
-    mode |> modeToStr |> Json.Encode.string
+encodeMode : Model -> List ( String, Json.Encode.Value )
+encodeMode model =
+    case model.mode of
+        NormalMode ->
+            [ ( "mode", Json.Encode.string "normalMode" ) ]
+
+        TestMode expireTime ->
+            [ ( "mode", Json.Encode.string "testMode" )
+            , ( "modeExpireTime", Json.Encode.int (Time.posixToMillis expireTime) )
+            ]
 
 
 
@@ -238,7 +250,7 @@ modelDecoder =
             (Json.Decode.list (Json.Decode.string |> Json.Decode.map Hostname))
         )
         (Json.Decode.field "exceptions" (Json.Decode.list exceptionDecoder))
-        (Json.Decode.field "mode" modeDecoder)
+        modeDecoder
 
 
 tabDecoder : Json.Decode.Decoder Tab
@@ -279,15 +291,20 @@ siteStatusDecoder =
 
 modeDecoder : Json.Decode.Decoder Mode
 modeDecoder =
-    Json.Decode.string
+    Json.Decode.field "mode" Json.Decode.string
         |> Json.Decode.andThen
-            (\str ->
-                case modeFromStr str of
-                    Ok mode ->
-                        Json.Decode.succeed mode
+            (\modeStr ->
+                case modeStr of
+                    "normalMode" ->
+                        Json.Decode.succeed NormalMode
 
-                    Err errStr ->
-                        Json.Decode.fail errStr
+                    "testMode" ->
+                        Json.Decode.field "modeExpireTime" Json.Decode.int
+                            |> Json.Decode.map Time.millisToPosix
+                            |> Json.Decode.map TestMode
+
+                    unrecognized ->
+                        Json.Decode.fail ("Unrecognized string " ++ unrecognized ++ " for application mode")
             )
 
 
@@ -418,29 +435,6 @@ checkIfIntercept model url =
         _ ->
             -- TODO later show a pop-up or something on unknown sites, asking user to categorize it. This logic may change.
             False
-
-
-modeToStr : Mode -> String
-modeToStr mode =
-    case mode of
-        NormalMode ->
-            "normalMode"
-
-        TestMode ->
-            "testMode"
-
-
-modeFromStr : String -> Result String Mode
-modeFromStr str =
-    case str of
-        "normalMode" ->
-            Ok NormalMode
-
-        "testMode" ->
-            Ok TestMode
-
-        _ ->
-            Err ("unrecognized string " ++ str ++ " for application mode")
 
 
 
