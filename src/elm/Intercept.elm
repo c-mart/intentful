@@ -286,8 +286,8 @@ viewValid : Model -> Html Msg
 viewValid model =
     Html.div []
         [ case model.common.mode of
-            C.TestMode _ ->
-                C.testModeBanner
+            C.TestMode expireTime ->
+                C.testModeBanner (Time.millisToPosix 0) expireTime
 
             _ ->
                 -- TODO consider Html.none?

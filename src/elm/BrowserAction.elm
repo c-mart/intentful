@@ -7,6 +7,7 @@ import Html.Styled as Html exposing (Html)
 import Html.Styled.Events as HtmlE
 import Json.Decode
 import Json.Encode
+import Time
 import Url
 import Url.Parser exposing ((<?>))
 
@@ -158,8 +159,8 @@ viewValid : Model -> Html Msg
 viewValid model =
     Html.div []
         [ case model.common.mode of
-            C.TestMode _ ->
-                C.testModeBanner
+            C.TestMode expireTime ->
+                C.testModeBanner (Time.millisToPosix 0) expireTime
 
             _ ->
                 -- TODO consider Html.none

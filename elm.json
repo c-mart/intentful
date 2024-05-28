@@ -13,7 +13,8 @@
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "elm-explorations/test": "2.1.2",
-            "rtfeldman/elm-css": "18.0.0"
+            "rtfeldman/elm-css": "18.0.0",
+            "ryan-haskell/date-format": "1.0.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",

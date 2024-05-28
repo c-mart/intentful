@@ -1,6 +1,7 @@
 module Common exposing (..)
 
 import Css
+import DateFormat.Relative
 import Html.Styled as Html
 import Html.Styled.Attributes as HtmlA
 import Json.Decode
@@ -441,6 +442,10 @@ checkIfIntercept model url =
 -- UI code
 
 
-testModeBanner : Html.Html msg
-testModeBanner =
-    Html.strong [ HtmlA.css [ Css.color (Css.rgb 255 0 0) ] ] [ Html.text "Danger: Test Mode" ]
+testModeBanner : Time.Posix -> Time.Posix -> Html.Html msg
+testModeBanner currentTime expireTime =
+    let
+        expiresIn =
+            DateFormat.Relative.relativeTime currentTime expireTime
+    in
+    Html.strong [ HtmlA.css [ Css.color (Css.rgb 255 0 0) ] ] [ Html.text ("Test Mode expires " ++ expiresIn) ]
