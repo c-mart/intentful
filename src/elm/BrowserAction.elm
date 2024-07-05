@@ -165,14 +165,24 @@ viewValid model =
             _ ->
                 -- TODO consider Html.none
                 Html.text ""
-        , Html.text
-            ("Current site is "
-                ++ (model.currentTabUrl.host |> C.Hostname |> C.hostnameToRegisteredDomain |> C.unwrapRegisteredDomain)
-            )
-        , Html.text
-            ("This site is "
-                ++ Debug.toString (C.checkSiteStatus model.common model.currentTabUrl)
-            )
+        , Html.p []
+            [ Html.text
+                "Current site is "
+            , Html.span []
+                [ Html.text
+                    (model.currentTabUrl.host
+                        |> C.Hostname
+                        |> C.hostnameToRegisteredDomain
+                        |> C.unwrapRegisteredDomain
+                    )
+                ]
+            ]
+        , Html.p []
+            [ Html.text
+                ("This site is "
+                    ++ Debug.toString (C.checkSiteStatus model.common model.currentTabUrl)
+                )
+            ]
         , renderSetStatusButtons model
         ]
 
