@@ -310,11 +310,18 @@ viewInitial model =
                     ++ " is an unsafe site."
                 )
             ]
-        , Html.ul []
-            [ Html.li [ HtmlE.onClick GotAdvanceToCreateException ] [ Html.button [] [ Html.text "Proceed anyway" ] ]
-            , Html.li []
+        , Html.form []
+            [ Html.p []
                 [ Html.button
-                    [ HtmlE.onClick GotCloseCurrentTab
+                    [ HtmlA.type_ "button"
+                    , HtmlE.onClick GotAdvanceToCreateException
+                    ]
+                    [ Html.text "Proceed anyway" ]
+                ]
+            , Html.p []
+                [ Html.button
+                    [ HtmlA.type_ "button"
+                    , HtmlE.onClick GotCloseCurrentTab
                     ]
                     [ Html.text "Close the tab, I don't need to go here" ]
                 ]
@@ -335,16 +342,17 @@ viewCreatingException model params =
                                 |> (+) (durationMins * 60 * 1000)
                                 |> Time.millisToPosix
                     in
-                    Html.button [ HtmlE.onClick (GotCreateException model.nextUrl params.reasonInput expireTime) ] [ Html.text ("Go to " ++ model.nextUrl.host) ]
+                    Html.button [ HtmlA.type_ "button", HtmlE.onClick (GotCreateException model.nextUrl params.reasonInput expireTime) ]
+                        [ Html.text ("Go to " ++ model.nextUrl.host) ]
 
                 WaitToCreate waitRemainMillis ->
-                    Html.button [] [ Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis ]
+                    Html.text <| "You must wait " ++ countdownRemainText waitRemainMillis
 
                 InvalidReason ->
-                    Html.button [] [ Html.text "Provide a longer reason for using the unsafe site" ]
+                    Html.text "Provide a longer reason for using the unsafe site"
 
                 InvalidDuration ->
-                    Html.button [] [ Html.text "Breaux, you must enter a number of minutes" ]
+                    Html.text "Breaux, you must enter a number of minutes"
     in
     Html.div []
         [ Html.p []
@@ -354,34 +362,39 @@ viewCreatingException model params =
                     ++ ", an unsafe site."
                 )
             ]
-        , Html.ul []
-            [ Html.li []
-                [ Html.div []
-                    [ Html.text ("Why do you want to use " ++ model.nextUrl.host ++ " now?")
-                    , Html.input
-                        [ HtmlE.onInput GotExceptionReasonInput
-                        , HtmlA.value params.reasonInput
-                        ]
-                        []
+        , Html.form []
+            [ Html.p []
+                [ Html.label [ HtmlA.for "exception-reason-input" ]
+                    [ Html.text ("Why do you want to use " ++ model.nextUrl.host ++ " now?") ]
+                , Html.input
+                    [ HtmlE.onInput GotExceptionReasonInput
+                    , HtmlA.value params.reasonInput
+                    , HtmlA.id "exception-reason-input"
                     ]
+                    []
                 ]
-            , Html.li []
-                [ Html.span []
+            , Html.p []
+                [ Html.label [ HtmlA.for "exception-duration-input" ]
                     [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
-                    , Html.input
-                        [ HtmlE.onInput GotExceptionDurationInput
-                        , HtmlA.value params.durationInput
-                        ]
-                        []
-                    , Html.text "minutes"
                     ]
+                , Html.input
+                    [ HtmlE.onInput GotExceptionDurationInput
+                    , HtmlA.value params.durationInput
+                    , HtmlA.id "exception-duration-input"
+                    ]
+                    []
+                , Html.text "minutes"
                 ]
-            , Html.li [] [ createExceptionButton ]
-            , Html.li []
-                [ Html.button
-                    [ HtmlE.onClick GotCloseCurrentTab
+            , Html.p []
+                [ Html.div []
+                    [ createExceptionButton ]
+                , Html.div []
+                    [ Html.button
+                        [ HtmlE.onClick GotCloseCurrentTab
+                        , HtmlA.type_ "button"
+                        ]
+                        [ Html.text "Close the tab, I don't need to go here" ]
                     ]
-                    [ Html.text "Close the tab, I don't need to go here" ]
                 ]
             ]
         ]
