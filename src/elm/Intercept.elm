@@ -359,13 +359,15 @@ viewCreatingException model params =
                     Html.text "Breaux, you must enter a number of minutes"
     in
     [ Html.p []
-        [ Html.text
-            ("You were going to "
-                ++ model.nextUrl.host
-                ++ ", an unsafe site."
-            )
+        [ Html.h1 []
+            [ Html.text
+                ("You were going to "
+                    ++ model.nextUrl.host
+                    ++ ", an unsafe site."
+                )
+            ]
         ]
-    , Html.p []
+    , Html.p [ HtmlA.class "form-label-input" ]
         [ Html.label [ HtmlA.for "exception-reason-input" ]
             [ Html.text ("Why do you want to use " ++ model.nextUrl.host ++ " now?") ]
         , Html.input
@@ -375,7 +377,7 @@ viewCreatingException model params =
             ]
             []
         ]
-    , Html.p []
+    , Html.p [ HtmlA.class "form-label-input" ]
         [ Html.label [ HtmlA.for "exception-duration-input" ]
             [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
             ]
