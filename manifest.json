@@ -23,7 +23,7 @@
         "src/js/content_script.js"
       ],
       "css": [
-        "built/css/styles.css"
+        "src/css/styles.css"
       ]
     }
   ],
