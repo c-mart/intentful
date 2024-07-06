@@ -21,6 +21,9 @@
       ],
       "js": [
         "src/js/content_script.js"
+      ],
+      "css": [
+        "built/css/styles.css"
       ]
     }
   ],

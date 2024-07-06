@@ -13,7 +13,7 @@
     "webextension-polyfill": "^0.10.0"
   },
   "scripts": {
-    "build": "npm run elm-build && npm run ts-build",
+    "build": "npm run elm-build && npm run ts-build && cp -r src/css built/",
     "elm-build": "npx elm make src/elm/Background.elm --output=built/elm-background.js && npx elm make src/elm/Intercept.elm --output=built/elm-intercept.js && npx elm make src/elm/BrowserAction.elm --output=built/elm-browser-action.js && npm run fix-elm-output",
     "fix-elm-output": "sed -i '$ s/this/this||window/' built/elm-background.js # https://stackoverflow.com/questions/52902903/cannot-read-property-elm-of-undefined-while-using-elm-0-19-in-electron",
     "ts-build": "npx tsc",

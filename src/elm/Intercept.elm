@@ -292,44 +292,48 @@ viewValid model =
             _ ->
                 -- TODO consider Html.none?
                 Html.text ""
-        , case model.viewState of
-            InitialView ->
-                viewInitial model
+        , Html.div [ HtmlA.class "intercept-dialog" ]
+            (case model.viewState of
+                InitialView ->
+                    viewInitial model
 
-            CreatingException params ->
-                viewCreatingException model params
+                CreatingException params ->
+                    viewCreatingException model params
+            )
         ]
 
 
-viewInitial : Model -> Html Msg
+viewInitial : Model -> List (Html Msg)
 viewInitial model =
-    Html.div []
+    [ Html.h1 []
+        [ Html.text
+            (model.nextUrl.host
+                ++ " is an unsafe site."
+            )
+        ]
+    , Html.form
+        [ HtmlA.class "intercept-dialog-bottom"
+        , HtmlA.class "button-row"
+        ]
         [ Html.p []
-            [ Html.text
-                (model.nextUrl.host
-                    ++ " is an unsafe site."
-                )
+            [ Html.button
+                [ HtmlA.type_ "button"
+                , HtmlE.onClick GotAdvanceToCreateException
+                ]
+                [ Html.text "Proceed anyway" ]
             ]
-        , Html.form []
-            [ Html.p []
-                [ Html.button
-                    [ HtmlA.type_ "button"
-                    , HtmlE.onClick GotAdvanceToCreateException
-                    ]
-                    [ Html.text "Proceed anyway" ]
+        , Html.p []
+            [ Html.button
+                [ HtmlA.type_ "button"
+                , HtmlE.onClick GotCloseCurrentTab
                 ]
-            , Html.p []
-                [ Html.button
-                    [ HtmlA.type_ "button"
-                    , HtmlE.onClick GotCloseCurrentTab
-                    ]
-                    [ Html.text "Close the tab, I don't need to go here" ]
-                ]
+                [ Html.text "Close the tab, I don't need to go here" ]
             ]
         ]
+    ]
 
 
-viewCreatingException : Model -> CreatingExceptionParams -> Html Msg
+viewCreatingException : Model -> CreatingExceptionParams -> List (Html Msg)
 viewCreatingException model params =
     let
         createExceptionButton =
@@ -354,50 +358,50 @@ viewCreatingException model params =
                 InvalidDuration ->
                     Html.text "Breaux, you must enter a number of minutes"
     in
-    Html.div []
-        [ Html.p []
-            [ Html.text
-                ("You were going to "
-                    ++ model.nextUrl.host
-                    ++ ", an unsafe site."
-                )
+    [ Html.p []
+        [ Html.text
+            ("You were going to "
+                ++ model.nextUrl.host
+                ++ ", an unsafe site."
+            )
+        ]
+    , Html.p []
+        [ Html.label [ HtmlA.for "exception-reason-input" ]
+            [ Html.text ("Why do you want to use " ++ model.nextUrl.host ++ " now?") ]
+        , Html.input
+            [ HtmlE.onInput GotExceptionReasonInput
+            , HtmlA.value params.reasonInput
+            , HtmlA.id "exception-reason-input"
             ]
-        , Html.form []
-            [ Html.p []
-                [ Html.label [ HtmlA.for "exception-reason-input" ]
-                    [ Html.text ("Why do you want to use " ++ model.nextUrl.host ++ " now?") ]
-                , Html.input
-                    [ HtmlE.onInput GotExceptionReasonInput
-                    , HtmlA.value params.reasonInput
-                    , HtmlA.id "exception-reason-input"
-                    ]
-                    []
+            []
+        ]
+    , Html.p []
+        [ Html.label [ HtmlA.for "exception-duration-input" ]
+            [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
+            ]
+        , Html.input
+            [ HtmlE.onInput GotExceptionDurationInput
+            , HtmlA.value params.durationInput
+            , HtmlA.id "exception-duration-input"
+            ]
+            []
+        , Html.text "minutes"
+        ]
+    , Html.p
+        [ HtmlA.class "intercept-dialog-bottom"
+        , HtmlA.class "button-row"
+        ]
+        [ Html.div []
+            [ createExceptionButton ]
+        , Html.div []
+            [ Html.button
+                [ HtmlE.onClick GotCloseCurrentTab
+                , HtmlA.type_ "button"
                 ]
-            , Html.p []
-                [ Html.label [ HtmlA.for "exception-duration-input" ]
-                    [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
-                    ]
-                , Html.input
-                    [ HtmlE.onInput GotExceptionDurationInput
-                    , HtmlA.value params.durationInput
-                    , HtmlA.id "exception-duration-input"
-                    ]
-                    []
-                , Html.text "minutes"
-                ]
-            , Html.p []
-                [ Html.div []
-                    [ createExceptionButton ]
-                , Html.div []
-                    [ Html.button
-                        [ HtmlE.onClick GotCloseCurrentTab
-                        , HtmlA.type_ "button"
-                        ]
-                        [ Html.text "Close the tab, I don't need to go here" ]
-                    ]
-                ]
+                [ Html.text "Close the tab, I don't need to go here" ]
             ]
         ]
+    ]
 
 
 canCreateException : Model -> CreatingExceptionParams -> ExceptionCreatability

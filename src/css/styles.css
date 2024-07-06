@@ -1,0 +1,34 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+        "Fira Sans", "Droid Sans", "Helvetica Neue",
+        sans-serif;
+}
+
+.intercept-dialog {
+    width: 60vw;
+    height: 50vh;
+    max-width: 40em;
+    max-height: 40em;
+    background-color: rgb(237, 234, 224);
+    border-radius: 1em;
+    margin: 8vh auto auto;
+    padding: 2em;
+    display: flex;
+    flex-direction: column;
+}
+
+.intercept-dialog-bottom {
+    margin-top: auto;
+}
+
+.button-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+button {
+    height: 5rem;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+}
