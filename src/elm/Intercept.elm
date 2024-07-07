@@ -368,17 +368,19 @@ viewCreatingException model params =
                 )
             ]
         ]
-    , Html.p [ HtmlA.class "form-label-input" ]
-        [ Html.label [ HtmlA.for "exception-reason-input" ]
-            [ Html.text ("Why do you want to use " ++ model.nextUrl.host ++ " now?") ]
-        , Html.input
-            [ HtmlE.onInput GotExceptionReasonInput
-            , HtmlA.value params.reasonInput
-            , HtmlA.id "exception-reason-input"
+    , Html.p [ HtmlA.class "intercept-dialog-form-content" ]
+        [ Html.p [ HtmlA.class "form-label-input" ]
+            [ Html.label [ HtmlA.for "exception-reason-input" ]
+                [ Html.text ("Why do you want to use " ++ model.nextUrl.host ++ " now?") ]
+            , Html.input
+                [ HtmlE.onInput GotExceptionReasonInput
+                , HtmlA.value params.reasonInput
+                , HtmlA.id "exception-reason-input"
+                ]
+                []
             ]
-            []
+        , exceptionDurationInput model params
         ]
-    , exceptionDurationInput model params
     , Html.p
         [ HtmlA.class "intercept-dialog-bottom"
         , HtmlA.class "button-row"
@@ -416,16 +418,21 @@ exceptionDurationInput model params =
                 |> Html.span [ HtmlA.class "button-row" ]
     in
     Html.p [ HtmlA.class "form-label-input" ]
-        [ Html.label [ HtmlA.for "exception-duration-input" ]
-            [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
+        [ Html.span
+            [ HtmlA.class "span-row" ]
+            [ Html.label [ HtmlA.for "exception-duration-input" ]
+                [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
+                ]
+            , Html.input
+                [ HtmlE.onInput GotExceptionDurationInput
+                , HtmlA.value params.durationInput
+                , HtmlA.id "exception-duration-input"
+                , HtmlA.class "minutes-input"
+                , HtmlA.type_ "number"
+                ]
+                []
+            , Html.text "minutes"
             ]
-        , Html.input
-            [ HtmlE.onInput GotExceptionDurationInput
-            , HtmlA.value params.durationInput
-            , HtmlA.id "exception-duration-input"
-            ]
-            []
-        , Html.text "minutes"
         , presetButtons
         ]
 

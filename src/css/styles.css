@@ -47,6 +47,17 @@ button {
     gap: 8px;
 }
 
+.span-row {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+}
+
+.minutes-input {
+    width: 48px;
+}
+
 .intercept-dialog {
     width: 60vw;
     max-width: 768px;
@@ -55,6 +66,11 @@ button {
     border-radius: 12px;
     margin: 8vh auto auto;
     padding: 24px;
+}
+
+.intercept-dialog-form-content {
+    width: 384px;
+    margin: inherit auto;
 }
 
 .intercept-dialog-bottom {
