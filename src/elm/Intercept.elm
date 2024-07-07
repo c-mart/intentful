@@ -278,7 +278,7 @@ initCreatingExceptionParams : Time.Posix -> CreatingExceptionParams
 initCreatingExceptionParams timeEnteredForm =
     { timeEnteredForm = timeEnteredForm
     , reasonInput = ""
-    , durationInput = "1"
+    , durationInput = ""
     }
 
 
@@ -378,18 +378,7 @@ viewCreatingException model params =
             ]
             []
         ]
-    , Html.p [ HtmlA.class "form-label-input" ]
-        [ Html.label [ HtmlA.for "exception-duration-input" ]
-            [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
-            ]
-        , Html.input
-            [ HtmlE.onInput GotExceptionDurationInput
-            , HtmlA.value params.durationInput
-            , HtmlA.id "exception-duration-input"
-            ]
-            []
-        , Html.text "minutes"
-        ]
+    , exceptionDurationInput model params
     , Html.p
         [ HtmlA.class "intercept-dialog-bottom"
         , HtmlA.class "button-row"
@@ -406,6 +395,39 @@ viewCreatingException model params =
             ]
         ]
     ]
+
+
+exceptionDurationInput : Model -> CreatingExceptionParams -> Html Msg
+exceptionDurationInput model params =
+    let
+        toPresetButton : Int -> Html Msg
+        toPresetButton duration =
+            Html.button
+                [ HtmlA.class "little-button"
+                , HtmlE.onClick
+                    (GotExceptionDurationInput (String.fromInt duration))
+                ]
+                [ Html.text (String.fromInt duration ++ " min") ]
+
+        presetButtons =
+            [ 1, 2, 5, 10 ]
+                |> List.map toPresetButton
+                |> (::) (Html.text "Quick:")
+                |> Html.span [ HtmlA.class "button-row" ]
+    in
+    Html.p [ HtmlA.class "form-label-input" ]
+        [ Html.label [ HtmlA.for "exception-duration-input" ]
+            [ Html.text ("Enable " ++ model.nextUrl.host ++ " for")
+            ]
+        , Html.input
+            [ HtmlE.onInput GotExceptionDurationInput
+            , HtmlA.value params.durationInput
+            , HtmlA.id "exception-duration-input"
+            ]
+            []
+        , Html.text "minutes"
+        , presetButtons
+        ]
 
 
 canCreateException : Model -> CreatingExceptionParams -> ExceptionCreatability
