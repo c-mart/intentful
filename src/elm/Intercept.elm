@@ -325,6 +325,7 @@ viewInitial model =
         , Html.p []
             [ Html.button
                 [ HtmlA.type_ "button"
+                , HtmlA.class "primary"
                 , HtmlE.onClick GotCloseCurrentTab
                 ]
                 [ Html.text "Close the tab, I don't need to go here" ]
@@ -399,6 +400,7 @@ viewCreatingException model params =
             [ Html.button
                 [ HtmlE.onClick GotCloseCurrentTab
                 , HtmlA.type_ "button"
+                , HtmlA.class "primary"
                 ]
                 [ Html.text "Close the tab, I don't need to go here" ]
             ]
